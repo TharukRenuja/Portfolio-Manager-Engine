@@ -3,6 +3,7 @@ import pyotp
 import qrcode
 import io
 import base64
+import os
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
@@ -24,6 +25,24 @@ def setup():
                 return redirect(url_for('auth.login'))
     except:
         pass
+    
+    # Detect if filesystem is writable (for environment-aware setup)
+    is_readonly = False
+    try:
+        test_file = '.write_test_temp'
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+    except:
+        is_readonly = True
+    
+    # Check if Firebase config exists in environment
+    has_firebase_env = bool(os.getenv('FIREBASE_CONFIG'))
+    
+    if request.method == 'GET':
+        return render_template('setup.html', 
+                             is_readonly=is_readonly, 
+                             has_firebase_env=has_firebase_env)
 
     if request.method == 'POST':
         # Handle Firebase credentials first
@@ -33,21 +52,27 @@ def setup():
                 import json as json_lib
                 firebase_data = json_lib.loads(firebase_json)
                 if 'project_id' in firebase_data and 'private_key' in firebase_data:
+                    # Save to firebase-key.json (for local development & VPS)
                     try:
                         with open('firebase-key.json', 'w') as f:
                             json_lib.dump(firebase_data, f, indent=2)
-                    except:
-                        pass # Silent on serverless
+                        print("✅ Firebase credentials saved to firebase-key.json")
+                    except Exception as e:
+                        print(f"ℹ️  Could not write firebase-key.json (read-only filesystem): {e}")
                     
                     if firebase_admin._apps:
                         del firebase_admin._apps[firebase_admin._DEFAULT_APP_NAME]
                     
-                    # Initialize from data directly instead of file path to support serverless better
+                    # Initialize from data directly
                     cred = credentials.Certificate(firebase_data)
                     firebase_admin.initialize_app(cred)
                     # Update global db reference
                     database.db = firestore.client()
                     database.firebase_initialized = True
+                    
+                    # Store in session for post-setup instructions
+                    session['firebase_config_for_vercel'] = firebase_json
+                    session['setup_completed'] = True
             except Exception as e:
                 flash(f'Firebase setup failed: {str(e)}', 'danger')
         
@@ -259,8 +284,6 @@ def setup():
         
         flash('🎉 Setup complete! All modules configured.', 'success')
         return redirect(url_for('auth.login'))
-
-    return render_template('setup.html')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():

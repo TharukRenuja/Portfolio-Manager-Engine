@@ -39,21 +39,72 @@
             <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-500/10 blur-[80px] rounded-full"></div>
             
             <form action="{{ url_for('auth.setup') }}" method="POST" class="space-y-8 relative z-10" id="setup-form">
-                <!-- Step 0: Firebase Credentials -->
+                <!-- Step 0: Firebase Configuration -->
                 <div class="step active" data-step="0">
                     <h2 class="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-[0.3em] mb-6">Step 0: Firebase Configuration</h2>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                            <p class="text-xs text-blue-700 dark:text-blue-300 font-bold leading-relaxed">
-                                📌 Paste your Firebase Service Account JSON below. Get it from Firebase Console → Project Settings → Service Accounts → Generate New Private Key
-                            </p>
+                    
+                    {% if is_readonly %}
+                        <!-- Read-only filesystem (Vercel) - Show environment variable instructions -->
+                        <div class="space-y-4">
+                            <div class="p-6 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-xl">
+                                <div class="flex items-start gap-3 mb-4">
+                                    <svg class="w-6 h-6 text-orange-600 dark:text-orange-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-black text-orange-700 dark:text-orange-300 uppercase tracking-widest mb-2">⚠️ Serverless Platform Detected</h3>
+                                        <p class="text-xs text-orange-600 dark:text-orange-400 font-medium leading-relaxed mb-4">
+                                            You're running on a read-only filesystem (Vercel/Netlify). Setup must be completed via environment variables.
+                                        </p>
+                                        
+                                        <div class="bg-white dark:bg-slate-900 rounded-lg p-4 space-y-3">
+                                            <p class="text-xs font-bold text-slate-700 dark:text-slate-300">📋 Setup Instructions:</p>
+                                            <ol class="text-xs text-slate-600 dark:text-slate-400 space-y-2 list-decimal list-inside">
+                                                <li>Get your Firebase Service Account JSON from <a href="https://console.firebase.google.com" target="_blank" class="text-yellow-600 hover:text-yellow-500 underline">Firebase Console</a></li>
+                                                <li>Go to your Vercel Project → Settings → Environment Variables</li>
+                                                <li>Add variable: <code class="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-[10px]">FIREBASE_CONFIG</code></li>
+                                                <li>Paste your entire Firebase JSON as the value (minified, single line)</li>
+                                                <li>Save and redeploy your application</li>
+                                            </ol>
+                                        </div>
+                                        
+                                        {% if not has_firebase_env %}
+                                        <div class="mt-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
+                                            <p class="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-2 mb-3">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                FIREBASE_CONFIG environment variable not found.
+                                            </p>
+                                            <button type="button" onclick="window.location.reload()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-lg shadow-red-500/20">
+                                                🔄 Check Again / Refresh Status
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <div class="mt-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
+                                            <p class="text-xs font-bold text-green-700 dark:text-green-300 flex items-center gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                                FIREBASE_CONFIG detected! You can proceed with setup.
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="space-y-2">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Firebase Credentials (JSON)</label>
-                            <textarea name="firebase_credentials" rows="10" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 font-mono text-xs" placeholder='{ "type": "service_account", "project_id": "...", ... }'></textarea>
+                    {% else %}
+                        <!-- Writable filesystem (Local/VPS) - Show normal Firebase input -->
+                        <div class="space-y-4">
+                            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                                <p class="text-xs text-blue-700 dark:text-blue-300 font-bold leading-relaxed">
+                                    📌 Paste your Firebase Service Account JSON below. Get it from Firebase Console → Project Settings → Service Accounts → Generate New Private Key
+                                </p>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Firebase Credentials (JSON)</label>
+                                <textarea name="firebase_credentials" rows="10" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 font-mono text-xs" placeholder='{ "type": "service_account", "project_id": "...", ... }'></textarea>
+                            </div>
                         </div>
+                    {% endif %}
 
-                        <!-- Restore Option -->
+                    {% if not is_readonly or has_firebase_env %}
+                        <!-- Restore Option (Available if writable OR serverless with config) -->
                         <div class="mt-6 p-5 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-dashed border-emerald-300 dark:border-emerald-700 rounded-xl">
                             <div class="flex items-start gap-3 mb-4">
                                 <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L9 8m4-4v12"></path></svg>
@@ -79,7 +130,7 @@
                             </div>
                             <input type="hidden" name="restore_backup" id="restore-backup-data">
                         </div>
-                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Step 1: Admin Account -->
@@ -262,18 +313,48 @@
             document.getElementById('progress-bar').style.width = progress + '%';
         }
 
+        const isReadonly = {{ is_readonly|tojson }};
+        const hasFirebaseEnv = {{ has_firebase_env|tojson }};
+
         function showStep(step) {
             document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
             document.querySelector(`.step[data-step="${step}"]`).classList.add('active');
 
             document.getElementById('prev-btn').style.display = step === 0 ? 'none' : 'block';
-            document.getElementById('next-btn').style.display = step === (totalSteps - 1) ? 'none' : 'flex';
+            
+            // On read-only systems, block "Next" on Step 0 if env var is missing
+            const nextBtn = document.getElementById('next-btn');
+            if (step === 0 && isReadonly && !hasFirebaseEnv) {
+                nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                nextBtn.style.pointerEvents = 'auto';
+            }
+            
+            nextBtn.style.display = step === (totalSteps - 1) ? 'none' : 'flex';
             document.getElementById('submit-btn').style.display = step === (totalSteps - 1) ? 'flex' : 'none';
 
             updateProgress();
         }
 
         function nextStep() {
+            if (currentStep === 0) {
+                if (isReadonly && !hasFirebaseEnv) {
+                    alert('⚠️ Deployment Required: Please set the FIREBASE_CONFIG environment variable and redeploy your app before proceeding to ensure data persistence.');
+                    return;
+                }
+                
+                if (!isReadonly) {
+                    const credentials = document.querySelector('textarea[name="firebase_credentials"]').value.trim();
+                    const backup = document.getElementById('restore-backup-data').value;
+                    if (!credentials && !backup) {
+                        alert('⚠️ Please provide your Firebase Service Account JSON or select a backup file to proceed.');
+                        return;
+                    }
+                }
+            }
+            
             if (currentStep < (totalSteps - 1)) {
                 currentStep++;
                 showStep(currentStep);

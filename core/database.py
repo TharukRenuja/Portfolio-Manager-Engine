@@ -24,7 +24,7 @@ def init_firebase():
                 except Exception as e:
                     print(f"⚠️  Env var init failed: {e}")
 
-            # 2. Try Local File
+            # 2. Try Local File (Local development & VPS)
             cred_path = 'firebase-key.json'
             if os.path.exists(cred_path):
                 with open(cred_path, 'r') as f:
@@ -36,6 +36,7 @@ def init_firebase():
                     firebase_initialized = True
                     db = firestore.client()
                     print("✅ Firebase initialized from local key file")
+                    return db
                 else:
                     print("ℹ️  Waiting for valid Firebase credentials (Run /setup)")
             else:

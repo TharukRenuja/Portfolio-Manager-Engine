@@ -70,16 +70,25 @@ def bootstrap_check():
     if request.path.startswith('/static') or request.path in ['/setup', '/login', '/logout', '/login/mfa']:
         return
     try:
+        print(f"🔍 Bootstrap check for path: {request.path}")
+        print(f"🔍 Database object exists: {database.db is not None}")
+        print(f"🔍 Firebase initialized: {database.firebase_initialized}")
+        
         if database.db:
             users = database.db.collection('users').limit(1).get()
+            print(f"🔍 Users query result: {len(users) if users else 0} users found")
             if not users: 
                 print("ℹ️  Redirecting to setup: No users found in DB")
                 return redirect(url_for('auth.setup'))
+            else:
+                print(f"✅ Bootstrap check passed - Found user(s) in database")
         else: 
             print("ℹ️  Redirecting to setup: Database not initialized")
             return redirect(url_for('auth.setup'))
     except Exception as e: 
-        print(f"⚠️  Bootstrap check error: {e}")
+        print(f"⚠️  Bootstrap check error: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         return redirect(url_for('auth.setup'))
 
 # --- Background Jobs (Maintained in main.py for state access) ---
