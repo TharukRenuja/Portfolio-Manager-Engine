@@ -13,3 +13,4 @@ flask-apscheduler
 pywebpush
 pillow
 flask-caching
+redis

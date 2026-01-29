@@ -230,12 +230,23 @@
                     <div class="space-y-6">
                         <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
                             <p class="text-xs text-blue-700 dark:text-blue-300 font-bold leading-relaxed">
-                                📌 Get your ImgBB API key: Visit <a href="https://api.imgbb.com/" target="_blank" class="underline hover:text-blue-500">api.imgbb.com</a> → Login/Signup → Get API Key. This enables image uploads for blog posts and projects.
+                                📌 Get your ImgBB API key: Visit <a href="https://api.imgbb.com/" target="_blank" class="underline hover:text-blue-500">api.imgbb.com</a> → Get API Key.
+                            </p>
+                        </div>
+                        <div class="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                            <p class="text-xs text-emerald-700 dark:text-emerald-300 font-bold leading-relaxed">
+                                🚀 Global Caching (Recommended for Serverless): Create a free database at <a href="https://upstash.com/" target="_blank" class="underline hover:text-emerald-500">upstash.com</a> and paste your **Redis URL** below.
                             </p>
                         </div>
                         <div class="space-y-2">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">ImgBB API Key (For Image Uploads)</label>
                             <input type="text" name="imgbb_api_key" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="Paste your API key here">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Redis URL (Optional - For Global Caching)</label>
+                            <input type="text" name="redis_url" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="redis://username:password@endpoint:port">
+                            <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 italic">Use Upstash Redis for instant cache clearing on serverless platforms.</p>
                         </div>
                         
                         <div class="space-y-4">

@@ -23,12 +23,36 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-123')
 
 # Configure Caching
-app.config['CACHE_TYPE'] = 'SimpleCache'  # Use Redis in production
+redis_url = os.getenv('REDIS_URL')
+if redis_url:
+    app.config['CACHE_TYPE'] = 'RedisCache'
+    app.config['CACHE_REDIS_URL'] = redis_url
+    print("🚀 Global cache enabled via Redis")
+else:
+    app.config['CACHE_TYPE'] = 'SimpleCache'
+    print("ℹ️  Local in-memory cache enabled (SimpleCache)")
+
 app.config['CACHE_DEFAULT_TIMEOUT'] = 300  # 5 minutes
 cache = Cache(app)
 
 # Initialize cache in shared module
 init_cache(cache)
+
+# --- Serverless Configuration Recovery ---
+# On Vercel, we might have lost keys in .env. Try to recover from Firestore.
+if database.db:
+    try:
+        infra_doc = database.db.collection('settings').document('infrastructure').get()
+        if infra_doc.exists:
+            infra = infra_doc.to_dict()
+            for key, value in infra.items():
+                if key != 'updated_at' and not os.getenv(key):
+                    os.environ[key] = str(value)
+                    if key == 'SECRET_KEY':
+                        app.config['SECRET_KEY'] = value
+            print("✅ Environment recovered from Firestore persistence layer")
+    except Exception as ie:
+        print(f"ℹ️  Infrastructure recovery skipped: {ie}")
 
 # Initialize Extensions
 bcrypt.init_app(app)
@@ -89,6 +113,7 @@ def bootstrap_check():
         print(f"⚠️  Bootstrap check error: {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
+        print("ℹ️  Critical Error in bootstrap check, defaulting to setup for safety")
         return redirect(url_for('auth.setup'))
 
 # --- Background Jobs (Maintained in main.py for state access) ---

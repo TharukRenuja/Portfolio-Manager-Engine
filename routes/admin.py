@@ -45,9 +45,10 @@ def settings_website():
         database.db.collection('settings').document('features').set(features, merge=True)
         
         # Clear cache so new settings load immediately
-        from core.shared import cache
-        if cache:
-            cache.clear()  # Clear all cached data
+        # Clear cache so new settings load immediately
+        import core.shared as shared
+        if shared.cache:
+            shared.cache.clear()  # Clear all cached data
         
         flash('Website settings and module configuration saved.', 'success')
         return redirect(url_for('admin.settings_website'))

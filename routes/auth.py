@@ -9,6 +9,8 @@ from firebase_admin import credentials, firestore
 from datetime import datetime
 from core import database
 from core.extensions import bcrypt
+from core.extensions import bcrypt
+import core.shared as shared
 from core.shared import login_required, get_settings
 from google.cloud.firestore import FieldFilter
 
@@ -145,56 +147,76 @@ def setup():
                     'added_at': datetime.now()
                 })
                 
-                flash('🎉 Backup restored successfully! You can now login.', 'success')
-                return redirect(url_for('auth.login'))
+                flash('🎉 Backup restored successfully!', 'success')
+                # Continue to infra generation below
                 
             except Exception as e:
                 flash(f'Backup restoration failed: {str(e)}', 'danger')
                 return render_template('setup.html')
 
-        # Continue with manual setup if no backup
-        email = request.form['email']
-        password = request.form['password'][:72]
+        else:
+            # Manual setup if no backup
+            email = request.form['email']
+            password = request.form['password'][:72]
 
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        database.db.collection('users').add({
-            'email': email,
-            'password': hashed_password,
-            'is_admin': True,
-            'is_root': True,
-            'created_at': datetime.now()
-        })
-        
-        database.db.collection('admins').document(email).set({
-            'email': email,
-            'is_root': True,
-            'added_at': datetime.now()
-        })
-        
-        # Initial settings creation
-        database.db.collection('settings').document('website').set({
-            'site_name': request.form.get('site_name', ''), 
-            'site_bio': request.form.get('site_bio', ''),
-            'contact_email': request.form.get('contact_email', ''),
-            'github_url': request.form.get('github_url', ''),
-            'linkedin_url': request.form.get('linkedin_url', ''),
-            'twitter_url': request.form.get('twitter_url', ''),
-            'favicon_url': request.form.get('favicon_url', ''),
-            'updated_at': datetime.now()
-        })
-        
-        database.db.collection('settings').document('seo').set({
-            'meta_title': request.form.get('meta_title', ''),
-            'meta_description': request.form.get('meta_description', ''),
-            'updated_at': datetime.now()
-        })
-        
-        
-        database.db.collection('settings').document('ui').set({
-            'primary_color': request.form.get('primary_color', '#FFD700'),
-            'accent_color': request.form.get('accent_color', '#10B981'),
-            'updated_at': datetime.now()
-        })
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            database.db.collection('users').add({
+                'email': email,
+                'password': hashed_password,
+                'is_admin': True,
+                'is_root': True,
+                'created_at': datetime.now()
+            })
+            
+            database.db.collection('admins').document(email).set({
+                'email': email,
+                'is_root': True,
+                'added_at': datetime.now()
+            })
+            print(f"✅ [auth.py] setup: Admin user '{email}' created during manual setup.")
+            
+            # Initial settings creation
+            database.db.collection('settings').document('website').set({
+                'site_name': request.form.get('site_name', ''), 
+                'site_bio': request.form.get('site_bio', ''),
+                'contact_email': request.form.get('contact_email', ''),
+                'github_url': request.form.get('github_url', ''),
+                'linkedin_url': request.form.get('linkedin_url', ''),
+                'twitter_url': request.form.get('twitter_url', ''),
+                'favicon_url': request.form.get('favicon_url', ''),
+                'updated_at': datetime.now()
+            })
+            
+            database.db.collection('settings').document('seo').set({
+                'meta_title': request.form.get('meta_title', ''),
+                'meta_description': request.form.get('meta_description', ''),
+                'updated_at': datetime.now()
+            })
+            
+            
+            database.db.collection('settings').document('ui').set({
+                'primary_color': request.form.get('primary_color', '#FFD700'),
+                'accent_color': request.form.get('accent_color', '#10B981'),
+                'updated_at': datetime.now()
+            })
+
+            database.db.collection('settings').document('integrations').set({
+                'imgbb_api_key': request.form.get('imgbb_api_key', ''),
+                'updated_at': datetime.now()
+            })
+
+            database.db.collection('settings').document('features').set({
+                'blog': 'feature_blog' in request.form,
+                'projects': 'feature_projects' in request.form,
+                'career': 'feature_career' in request.form,
+                'links': 'feature_links' in request.form,
+                'vault': 'feature_vault' in request.form,
+                'monitor': 'feature_monitor' in request.form,
+                'resumes': 'feature_resumes' in request.form,
+                'downloads': 'feature_downloads' in request.form,
+                'updated_at': datetime.now()
+            })
+            print("✅ Manual setup settings documents created in Firestore")
 
         # --- Auto-generate Infrastructure Keys ---
         try:
@@ -246,6 +268,20 @@ def setup():
             if imgbb_key:
                 env_content['IMGBB_API_KEY'] = imgbb_key
 
+            # Add Redis URL to .env if provided in setup
+            redis_url = request.form.get('redis_url')
+            if redis_url:
+                env_content['REDIS_URL'] = redis_url
+
+            # --- Persistent Storage for Serverless ---
+            # Save ALL generated/provided environment keys to Firestore
+            infra_keys = env_content.copy()
+            infra_keys['ADMIN_EMAIL'] = email # Ensure this is present
+            infra_keys['updated_at'] = datetime.now()
+            
+            database.db.collection('settings').document('infrastructure').set(infra_keys, merge=True)
+            print(f"✅ [auth.py] Infrastructure persistence stored: {list(infra_keys.keys())}")
+
             # Write back to .env (Try silently)
             try:
                 with open(env_path, 'w') as f:
@@ -261,27 +297,18 @@ def setup():
             os.environ['VAPID_PUBLIC_KEY'] = env_content.get('VAPID_PUBLIC_KEY', '')
             if imgbb_key:
                 os.environ['IMGBB_API_KEY'] = imgbb_key
-            
+                
         except Exception as e:
-            print(f"⚠️ Key generation skipped or failed: {e}")
+            print(f"❌ [auth.py] Critical error in infrastructure key generation: {e}")
+            import traceback
+            traceback.print_exc()
 
-        database.db.collection('settings').document('integrations').set({
-            'imgbb_api_key': request.form.get('imgbb_api_key', ''),
-            'updated_at': datetime.now()
-        })
-
-        database.db.collection('settings').document('features').set({
-            'blog': 'feature_blog' in request.form,
-            'projects': 'feature_projects' in request.form,
-            'career': 'feature_career' in request.form,
-            'links': 'feature_links' in request.form,
-            'vault': 'feature_vault' in request.form,
-            'monitor': 'feature_monitor' in request.form,
-            'resumes': 'feature_resumes' in request.form,
-            'downloads': 'feature_downloads' in request.form,
-            'updated_at': datetime.now()
-        })
-        
+        # --- Finalize Setup ---
+        # Clear cache so new settings load immediately
+        if shared.cache:
+            shared.cache.clear()
+            print("✅ Cache cleared after setup")
+            
         flash('🎉 Setup complete! All modules configured.', 'success')
         return redirect(url_for('auth.login'))
 
