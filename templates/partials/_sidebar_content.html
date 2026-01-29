@@ -1,0 +1,186 @@
+<div class="p-8">
+  <h1
+    class="text-2xl font-black bg-gradient-to-r from-brand to-amber-500 bg-clip-text text-transparent italic tracking-tighter"
+  >
+    {{ settings.site_name or 'PORTFOLIO' }}
+  </h1>
+  <p
+    class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-[0.2em] font-black"
+  >
+    Portfolio Manager
+  </p>
+</div>
+
+<nav class="flex-1 px-4 space-y-1 overscroll-contain overflow-y-auto no-scrollbar pb-20 md:pb-8">
+  <!-- Core -->
+  <a href="{{ url_for('dashboard.dashboard_home') }}" class="sidebar-link flex items-center px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 text-slate-600 dark:text-slate-400 hover:text-brand border border-transparent hover:border-brand/20 transition-all rounded-xl text-sm font-bold mb-2">
+    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Dashboard Overview</span>
+  </a>
+
+  <!-- Content Management -->
+  <div class="nav-group mb-2">
+    <button onclick="toggleNavGroup(this)" class="w-full flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-transparent hover:border-brand/20 transition-all cursor-pointer">
+      <div class="flex items-center pointer-events-none">
+        <svg class="w-4 h-4 mr-3 text-slate-400 group-hover:text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Content Studio</span>
+      </div>
+      <svg id="content-group-chevron" class="w-3 h-3 text-slate-400 transition-transform duration-300 transform pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+    </button>
+    <div id="content-group" class="nav-group-content space-y-1 transition-all duration-300 overflow-hidden max-h-0 opacity-0 lg:max-h-none lg:opacity-100 lg:block">
+      {% if features.blog %}
+      <a href="{{ url_for('cms.blog_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Blog Posts</a>
+      {% endif %}
+      
+      {% if features.projects %}
+      <a href="{{ url_for('cms.project_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Projects</a>
+      {% endif %}
+      
+      {% if features.career %}
+      <a href="{{ url_for('cms.career_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Career Portfolio</a>
+      {% endif %}
+      
+      {% if features.resumes %}
+      <a href="{{ url_for('tools.resumes_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Resume Vault</a>
+      {% endif %}
+      
+      {% if features.downloads %}
+      <a href="{{ url_for('tools.downloads_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Downloads</a>
+      {% endif %}
+      
+      <a href="{{ url_for('tools.media_manager') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Media Library</a>
+    </div>
+  </div>
+
+  <!-- Connectivity Hub -->
+  <div class="nav-group mb-2">
+    <button onclick="toggleNavGroup(this)" class="w-full flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-transparent hover:border-brand/20 transition-all cursor-pointer">
+      <div class="flex items-center pointer-events-none">
+        <svg class="w-4 h-4 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Connectivity</span>
+      </div>
+      <svg id="connectivity-group-chevron" class="w-3 h-3 text-slate-400 transition-transform duration-300 transform pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+    </button>
+    <div id="connectivity-group" class="nav-group-content space-y-1 transition-all duration-300 overflow-hidden max-h-0 opacity-0 lg:max-h-none lg:opacity-100 lg:block">
+      <a href="{{ url_for('tools.messages_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Inbound Messages</a>
+      <a href="{{ url_for('tools.notification_center') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Notification Center</a>
+      {% if features.links %}
+      <a href="{{ url_for('tools.links_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Link Directory</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Control Center -->
+  <div class="nav-group mb-2">
+    <button onclick="toggleNavGroup(this)" class="w-full flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-transparent hover:border-brand/20 transition-all cursor-pointer">
+      <div class="flex items-center pointer-events-none">
+        <svg class="w-4 h-4 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Admin Control</span>
+      </div>
+      <svg id="control-group-chevron" class="w-3 h-3 text-slate-400 transition-transform duration-300 transform pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+    </button>
+    <div id="control-group" class="nav-group-content space-y-1 transition-all duration-300 overflow-hidden max-h-0 opacity-0 lg:max-h-none lg:opacity-100 lg:block">
+      {% if features.monitor %}
+      <a href="{{ url_for('tools.domain_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Domain Tracker</a>
+      {% endif %}
+      
+      {% if features.vault %}
+      <a href="{{ url_for('tools.vault_list') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Resource Vault</a>
+      {% endif %}
+      
+      <a href="{{ url_for('admin.settings_website') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">Configure Website</a>
+      <a href="{{ url_for('admin.settings_users') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">User Management</a>
+      <a href="{{ url_for('admin.settings_seo') }}" class="sidebar-link flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-brand transition-colors rounded-lg ml-7 text-sm font-bold">SEO Center</a>
+    </div>
+  </div>
+</nav>
+
+<div class="p-4 mt-auto border-t border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 backdrop-blur-md sticky bottom-0 space-y-2">
+  <button onclick="toggleSystemInfo()" class="w-full flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all text-sm font-bold">
+    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    System Info
+  </button>
+  <a href="{{ url_for('auth.logout') }}" class="flex items-center px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 rounded-lg transition-all text-sm font-bold">
+    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+    Logout
+  </a>
+</div>
+
+<script>
+  function toggleNavGroup(button) {
+    if (window.innerWidth >= 1024) return;
+
+    const container = button.closest('.nav-group');
+    const group = container.querySelector('.nav-group-content');
+    const chevron = container.querySelector('svg[id$="-chevron"]');
+    
+    // Check current state (using class or inline style)
+    const isExpanded = group.classList.contains('is-expanded');
+
+    // Close all others first (Accordion behavior)
+    document.querySelectorAll('.nav-group-content').forEach(g => {
+        g.style.maxHeight = '0px';
+        g.style.opacity = '0';
+        g.classList.remove('is-expanded');
+    });
+    document.querySelectorAll('.nav-group svg[id$="-chevron"]').forEach(c => {
+        c.style.transform = 'rotate(0deg)';
+    });
+
+    if (!isExpanded) {
+        group.style.maxHeight = group.scrollHeight + 'px';
+        group.style.opacity = '1';
+        group.classList.add('is-expanded');
+        chevron.style.transform = 'rotate(180deg)';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const currentPath = window.location.pathname;
+    
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
+        link.classList.add('sidebar-item-active');
+        
+        // Auto-expand parent group on mobile
+        if (window.innerWidth < 1024) {
+          const parentGroup = link.closest('.nav-group-content');
+          if (parentGroup) {
+            parentGroup.style.maxHeight = parentGroup.scrollHeight + 'px';
+            parentGroup.style.opacity = '1';
+            parentGroup.classList.add('is-expanded');
+            const container = parentGroup.closest('.nav-group');
+            const chevron = container.querySelector('svg[id$="-chevron"]');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+          }
+        }
+      }
+    });
+
+    // Handle large screens initially
+    if (window.innerWidth >= 1024) {
+        document.querySelectorAll('.nav-group-content').forEach(g => {
+            g.style.maxHeight = 'none';
+            g.style.opacity = '1';
+        });
+    }
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1024) {
+            document.querySelectorAll('.nav-group-content').forEach(g => {
+                g.style.maxHeight = 'none';
+                g.style.opacity = '1';
+            });
+        } else {
+             document.querySelectorAll('.nav-group-content').forEach(g => {
+                if (!g.querySelector('.sidebar-item-active')) {
+                    g.style.maxHeight = '0px';
+                    g.style.opacity = '0';
+                    g.classList.remove('is-expanded');
+                }
+            });
+        }
+    });
+  });
+</script>

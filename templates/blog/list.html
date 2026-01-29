@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Blog posts</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm md:text-base">Manage and publish your latest articles.</p>
+        </div>
+        <a href="{{ url_for('cms.blog_new') }}" class="hidden md:inline-flex items-center justify-center px-5 py-2.5 bg-brand text-slate-900 rounded-xl font-black hover:bg-amber-400 transition-all shadow-lg shadow-brand/20 whitespace-nowrap">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add New Post
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for blog_id, blog in blogs.items() %}
+        <div class="glass p-5 md:p-6 rounded-[1.5rem] border-slate-200/60 dark:border-slate-800/60 shadow-md relative group transition-all hover:scale-[1.01]">
+            <div class="flex justify-between items-start mb-1">
+                <h3 class="text-xl font-black text-brand tracking-tight truncate max-w-[70%]">{{ blog['title'] }}</h3>
+                <div class="flex items-center space-x-1.5">
+                    <a href="{{ url_for('cms.blog_edit', blog_id=blog_id) }}" class="p-2.5 bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 rounded-xl hover:text-brand transition-all" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </a>
+                    <button onclick="confirmDelete('{{ blog_id }}', '{{ blog.title }}')" class="p-2.5 bg-rose-500/10 dark:bg-rose-500/5 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all" title="Delete">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">
+                {% for category in blog['category'] %}{{ category }}{% if not loop.last %} • {% endif %}{% endfor %}
+            </p>
+
+            <div class="h-px bg-slate-100 dark:bg-slate-800/50 w-full mb-4"></div>
+
+            <div class="flex justify-between items-end">
+                <div>
+                    <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Views</p>
+                    <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ blog.get('views', 0) | format_number }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[9px] text-slate-400 dark:text-slate-500 font-bold italic opacity-60">{{ blog['date'] }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Delete Form -->
+<form id="delete-form" action="{{ url_for('cms.blog_delete') }}" method="POST" style="display: none;">
+    <input type="hidden" name="blog_id" id="delete-blog-id">
+</form>
+
+{% block fab %}
+<a href="{{ url_for('cms.blog_new') }}" class="fab md:hidden bg-gold text-slate-900 shadow-xl shadow-gold/20" title="New Post">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+</a>
+{% endblock %}
+
+<script>
+function confirmDelete(id, title) {
+    if (confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+        document.getElementById('delete-blog-id').value = id;
+        document.getElementById('delete-form').submit();
+    }
+}
+</script>
+{% endblock %}

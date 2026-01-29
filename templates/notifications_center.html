@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Notification Center{% endblock %}
+{% block breadcrumb_active %}Notifications{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Notification Center</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">System health alerts, domain expiries, and security updates.</p>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        {% for alert in alerts %}
+        <div class="glass p-4 rounded-xl border-l-4 
+            {{ 'border-rose-500 bg-rose-50/50 dark:bg-rose-900/20' if alert.alert_type == 'critical' else 'border-amber-500 bg-amber-50/50 dark:bg-amber-900/20' }} flex justify-between items-center group relative translate-y-0 hover:-translate-y-1 transition-all">
+            <a href="{{ alert.link or '#' }}" class="flex items-start flex-grow">
+                <div class="p-2 rounded-lg {{ 'bg-rose-100 text-rose-600' if alert.alert_type == 'critical' else 'bg-amber-100 text-amber-600' }} mr-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {% if alert.alert_type == 'critical' %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        {% else %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        {% endif %}
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 dark:text-slate-100">{{ alert.subject or alert.title }}</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ alert.message or alert.subtitle }}</p>
+                    <span class="text-[10px] font-mono text-slate-400 mt-1 block">
+                        {% if alert.timestamp and alert.timestamp.strftime %}
+                            {{ alert.timestamp.strftime('%b %d, %Y %H:%M') }}
+                        {% else %}
+                            Just Now
+                        {% endif %}
+                    </span>
+                </div>
+            </a>
+            
+            <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {% if not alert.is_system %}
+                <a href="mailto:{{ alert.email }}?subject=Re: {{ alert.subject }}" class="p-2 text-slate-400 hover:text-brand transition-colors" title="Reply">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5"></path></svg>
+                </a>
+                {% endif %}
+                {% set del_url = url_for('api.dismiss_notification_api', msg_id=alert.id) %}
+                <button onclick="deleteNotification(event, '{{ del_url }}')" class="p-2 text-slate-400 hover:text-rose-500 transition-colors" title="Dismiss">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="glass p-12 text-center rounded-3xl border-slate-200/60 dark:border-slate-800/60">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
+                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200">System is healthy</h3>
+            <p class="text-slate-500">No active alerts or critical notifications.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+async function deleteNotification(event, url) {
+    event.preventDefault();
+    window.askConfirm('Dismiss Alert', 'Are you sure you want to dismiss this system notification?', async () => {
+        try {
+            const response = await fetch(url, { method: 'POST' });
+            if (response.ok) { 
+                // Seamlessly remove the element from the DOM
+                const btn = event.target.closest('button');
+                const card = btn.closest('.glass');
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                setTimeout(() => card.remove(), 300);
+            }
+            else { alert('Failed to dismiss alert'); }
+        } catch (e) { 
+            console.error('Dismiss error:', e);
+            alert('Error communicating with server'); 
+        }
+    });
+}
+</script>
+{% endblock %}

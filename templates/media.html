@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Media Library{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Media Inventory</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm md:text-base">A collection of all hosted assets across your blogs and projects.</p>
+        </div>
+    </div>
+
+    <!-- Media Grid -->
+    <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+        {% for img in images %}
+        <div class="glass group rounded-2xl overflow-hidden border-slate-200/60 dark:border-slate-800/60 shadow-sm hover:border-brand/40 transition-all flex flex-col">
+            <div class="aspect-square overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center relative shrink-0">
+                <img src="{{ img.url }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="{{ img.source }}">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                    <button onclick="copyToClipboard('{{ img.url }}')" class="w-full py-1.5 bg-white/20 backdrop-blur-md text-white text-[8px] font-black uppercase tracking-widest rounded-lg border border-white/30 hover:bg-white/40 transition-all">
+                        Copy
+                    </button>
+                </div>
+            </div>
+            <div class="p-2 md:p-3 space-y-0.5 flex-1 min-w-0">
+                <span class="text-[8px] font-black text-brand uppercase tracking-wider block truncate">{{ img.type }}</span>
+                <h3 class="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate leading-tight">{{ img.source }}</h3>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full py-24 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-4">
+                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+            <p class="text-slate-400 italic">No media assets found in your content yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('URL copied to clipboard!');
+    });
+}
+</script>
+{% endblock %}

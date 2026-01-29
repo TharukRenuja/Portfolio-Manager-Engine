@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Manager Dashboard</title>
+    {% if settings.favicon_url %}
+    <link rel="icon" type="image/x-icon" href="{{ settings.favicon_url }}">
+    {% endif %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: 'var(--brand-primary)',
+              gold: 'var(--brand-primary)', // Legacy support
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
+    <script>
+      // Apply theme as early as possible to prevent flashing
+      if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      
+      // Calculate text color based on background brightness
+      function getContrastColor(hexColor) {
+        // Remove # if present
+        const hex = hexColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Calculate relative luminance
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        
+        // Return white for dark colors, dark for light colors
+        return luminance > 0.5 ? '#0f172a' : '#ffffff';
+      }
+      
+      // Lighten or darken color for hover
+      function adjustColor(hexColor, percent) {
+        const hex = hexColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        const factor = luminance > 0.5 ? -percent : percent; // Darken light colors, lighten dark colors
+        
+        const adjust = (col) => Math.min(255, Math.max(0, col + (col * factor)));
+        
+        return '#' + 
+          Math.round(adjust(r)).toString(16).padStart(2, '0') +
+          Math.round(adjust(g)).toString(16).padStart(2, '0') +
+          Math.round(adjust(b)).toString(16).padStart(2, '0');
+      }
+      
+      // Apply colors
+      const primaryColor = '{{ ui.primary_color or "#FFD700" }}';
+      const accentColor = '{{ ui.accent_color or "#10B981" }}';
+      
+      document.documentElement.style.setProperty('--brand-primary', primaryColor);
+      document.documentElement.style.setProperty('--brand-accent', accentColor);
+      document.documentElement.style.setProperty('--brand-text', getContrastColor(primaryColor));
+      document.documentElement.style.setProperty('--brand-hover', adjustColor(primaryColor, 0.15));
+      document.documentElement.style.setProperty('--accent-text', getContrastColor(accentColor));
+    </script>
+    <style>
+      :root {
+        --brand-primary: {{ ui.primary_color or '#FFD700' }};
+        --brand-accent: {{ ui.accent_color or '#10B981' }};
+        --brand-text: #0f172a; /* Will be overridden by JS */
+        --brand-hover: #ffd700; /* Will be overridden by JS */
+        --accent-text: #ffffff; /* Will be overridden by JS */
+      }
+      body {
+        font-family: "Outfit", sans-serif;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .dark .glass {
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      
+      /* Smart button styling with contrast text */
+      .bg-brand {
+        background-color: var(--brand-primary) !important;
+        color: var(--brand-text) !important;
+      }
+      .bg-brand:hover {
+        background-color: var(--brand-hover) !important;
+      }
+      .text-brand {
+        color: var(--brand-primary) !important;
+      }
+      .border-brand {
+        border-color: var(--brand-primary) !important;
+      }
+      
+      /* Accent color utilities */
+      .bg-accent {
+        background-color: var(--brand-accent) !important;
+        color: var(--accent-text) !important;
+      }
+      .text-accent {
+        color: var(--brand-accent) !important;
+      }
+      
+      .sidebar-item-active {
+        background: var(--brand-primary) !important;
+        color: var(--brand-text) !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .dark .sidebar-item-active {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+      }
+      .hover-vibrant {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .hover-vibrant:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-color: var(--brand-primary) !important;
+      }
+      .border-brand-gradient {
+        border-width: 2px;
+        border-style: solid;
+        border-color: var(--brand-primary) !important;
+      }
+      
+      /* CKEditor Dark Mode Premium overrides */
+      .dark .ck-reset_all, .dark .ck-reset_all * {
+        color: #e2e8f0 !important;
+      }
+      .dark .ck.ck-editor__main>.ck-editor__editable {
+        background: #0f172a !important;
+        border-color: #1e293b !important;
+        color: #e2e8f0 !important;
+      }
+      .dark .ck.ck-toolbar {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+      }
+      .dark .ck.ck-button {
+        color: #e2e8f0 !important;
+      }
+      .dark .ck.ck-button:hover, .dark .ck.ck-button:active {
+        background: #334155 !important;
+      }
+      .dark .ck.ck-button.ck-on {
+        background: #475569 !important;
+        color: var(--brand-primary) !important;
+      }
+      .dark .ck.ck-dropdown__panel {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+      }
+      .dark .ck.ck-list__item, .dark .ck.ck-list__button {
+        background: #1e293b !important;
+      }
+      .dark .ck.ck-list__item:hover, .dark .ck.ck-list__button:hover {
+        background: #334155 !important;
+      }
+      /* FAB Styling */
+      .fab {
+        position: fixed;
+        bottom: 2rem;
+        right: 1.5rem;
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 9999px;
+        background: var(--brand-primary);
+        color: var(--brand-text);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .fab:hover {
+        background: var(--brand-hover);
+      }
+      .fab:active {
+        transform: scale(0.9) rotate(-15deg);
+      }
+      
+      /* Hide scrollbar utility */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Sidebar (Desktop) -->
+      <aside
+        class="w-72 glass border-r border-slate-200 dark:border-slate-800 hidden md:flex flex-col z-30"
+      >
+        {% include "partials/_sidebar_content.html" %}
+      </aside>
+
+      <!-- Sidebar (Mobile Drawer) -->
+      <div id="mobile-sidebar-backdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden transition-opacity duration-300 opacity-0"></div>
+      <aside
+        id="mobile-sidebar"
+        class="fixed inset-y-0 left-0 w-72 glass border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transform -translate-x-full transition-transform duration-300 md:hidden"
+      >
+        <div class="absolute top-4 right-4 print:hidden">
+          <button id="mobile-sidebar-close" class="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        {% include "partials/_sidebar_content.html" %}
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <!-- Top Nav -->
+        <header
+          class="h-16 glass flex items-center justify-between px-4 md:px-8 border-b border-slate-200 dark:border-slate-800 shrink-0 z-40"
+        >
+          <div class="flex items-center md:hidden">
+            <button id="mobile-sidebar-open" class="p-2 -ml-2 text-slate-600 dark:text-slate-400">
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                ></path>
+              </svg>
+            </button>
+            <h1 class="ml-2 md:ml-4 font-black text-gold text-sm md:text-base lg:text-lg uppercase tracking-tighter italic whitespace-nowrap">{{ settings.site_name or 'PORTFOLIO' }}</h1>
+          </div>
+          <div class="hidden md:block">
+            <nav class="flex text-sm font-semibold uppercase tracking-wider" aria-label="Breadcrumb">
+              <ol class="inline-flex items-center space-x-2">
+                <li class="inline-flex items-center">
+                  <a href="{{ url_for('dashboard.dashboard_home') }}" class="text-slate-500 hover:text-brand transition-colors">Workspace</a>
+                </li>
+                {% if breadcrumbs %}
+                  {% for b in breadcrumbs %}
+                  <li>
+                    <div class="flex items-center">
+                      <svg class="w-4 h-4 text-slate-400 mx-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                      <a href="{{ b.url }}" class="text-slate-500 hover:text-brand transition-colors">{{ b.label }}</a>
+                    </div>
+                  </li>
+                  {% endfor %}
+                {% endif %}
+                <li>
+                  <div class="flex items-center">
+                    <svg class="w-4 h-4 text-slate-400 mx-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    <span class="text-slate-800 dark:text-slate-100 italic">{% block breadcrumb_active %}{% block title %}{% endblock %}{% endblock %}</span>
+                  </div>
+                </li>
+              </ol>
+            </nav>
+          </div>
+          <div class="flex items-center space-x-5">
+            <!-- Notifications -->
+            <div class="relative" id="notification-container">
+                <button onclick="toggleNotifications()" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all relative">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <span id="notification-badge" class="absolute top-1.5 right-1.5 {% if not notifications %}hidden{% endif %} block h-2 w-2 rounded-full ring-2 ring-white dark:ring-slate-900 bg-red-500 animate-pulse"></span>
+                </button>
+                
+            </div>
+
+
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+              <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+              <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path></svg>
+            </button>
+            <div class="hidden sm:flex flex-col items-end">
+              <p class="text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100 truncate max-w-[120px] md:max-w-none">
+                {{ session.user.email if session.user else 'Admin' }}
+              </p>
+              <p class="text-[9px] md:text-[10px] font-bold uppercase tracking-tighter text-slate-400">
+                System <span class="text-gold">Admin</span>
+              </p>
+            </div>
+            <!-- Mobile Account Icon -->
+            {% if settings.favicon_url %}
+            <div class="sm:hidden w-8 h-8 rounded-full bg-white/10 dark:bg-slate-800/50 border border-gold/20 flex items-center justify-center overflow-hidden">
+              <img src="{{ settings.favicon_url }}" alt="Profile" class="w-full h-full object-cover">
+            </div>
+            {% else %}
+            <div class="sm:hidden w-8 h-8 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center text-gold font-black text-[10px]">
+              {{ (session.user.email[0] if session.user else 'A') | upper }}
+            </div>
+            {% endif %}
+          </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="max-w-4xl mx-auto mb-6 space-y-3">
+                {% for category, message in messages %}
+                  <div class="flash-message p-4 rounded-2xl flex items-center justify-between {% if category == 'success' %}bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400{% elif category == 'warning' %}bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400{% elif category == 'danger' %}bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400{% else %}bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400{% endif %} font-bold text-sm animate-in fade-in zoom-in duration-300">
+                    <div class="flex items-center">
+                      {% if category == 'success' %}
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      {% elif category == 'danger' %}
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      {% endif %}
+                      {{ message }}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+          {% block content %}{% endblock %}
+          
+          <!-- Floating Action Button Holder (Mobile Only) -->
+          <div class="md:hidden">
+            {% block fab %}{% endblock %}
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Notification Dropdown (Portal) -->
+    <div id="notification-dropdown" class="hidden opacity-0 scale-95 fixed top-16 right-4 md:right-8 w-[calc(100%-2rem)] md:w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-[100] overflow-hidden transform transition-all duration-200 origin-top-right">
+        <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Notifications</h3>
+            {% if notifications %}
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-brand/10 text-brand">{{ notifications|length }} new</span>
+            {% endif %}
+        </div>
+        <div class="max-h-96 overflow-y-auto">
+            {% if notifications %}
+                {% for n in notifications %}
+                <a href="{{ n.link }}" class="block p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0 relative group">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mt-1">
+                            {% if n.priority == 'high' %}
+                                <div class="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-500 flex items-center justify-center">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                </div>
+                            {% else %}
+                                <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-500 flex items-center justify-center">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-xs font-bold text-slate-800 dark:text-slate-200">{{ n.title }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{{ n.subtitle }}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">{{ n.time.strftime('%b %d, %H:%M') }}</p>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="p-8 text-center">
+                    <svg class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">No new notifications</p>
+                </div>
+            {% endif %}
+        </div>
+        <div class="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/20 text-center">
+            <a href="{{ url_for('tools.notification_center') }}" class="text-xs font-bold text-brand hover:text-amber-400 transition-colors block py-1">View All Notifications &rarr;</a>
+        </div>
+    </div>
+
+    <!-- System Info Modal -->
+    <div id="system-info-modal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="toggleSystemInfo()"></div>
+      <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+          <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-200 dark:border-slate-800">
+            <div class="bg-white dark:bg-slate-900 px-4 pb-4 pt-5 sm:p-8 sm:pb-4">
+              <div class="flex flex-col items-center">
+                <!-- Info Icon at the top -->
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 dark:bg-brand/5 border border-brand/20 mb-6">
+                  <svg class="h-8 w-8 text-brand" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                  </svg>
+                </div>
+                
+                <div class="text-center w-full">
+                  <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase italic tracking-tight" id="modal-title">System Information</h3>
+                  <div class="mt-6 text-sm text-slate-600 dark:text-slate-400 space-y-3 px-2">
+                    <div class="flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Core Version</span>
+                        <span class="font-mono text-slate-700 dark:text-slate-300 font-bold">v1.0.0</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Made with ❤️ by</span>
+                        <span class="font-bold text-slate-700 dark:text-slate-300">Tharuk Renuja</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Backend</p>
+                            <p class="text-xs font-bold text-brand">Python / Flask</p>
+                        </div>
+                        <div class="bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Database</p>
+                            <p class="text-xs font-bold text-sky-500">Google Firestore</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 text-left">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-1">Live Integration Suite</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1.5 bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700">TailwindCSS</span>
+                            <span class="px-3 py-1.5 bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700">ImgBB API</span>
+                            <span class="px-3 py-1.5 bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700">VAPID Push</span>
+                            <span class="px-3 py-1.5 bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700">AJAX</span>
+                          </div>
+                    </div>
+
+                    <div class="pt-6 flex flex-col space-y-3">
+                        <a href="https://github.com/TharukRenuja/Portfolio-API" target="_blank" class="w-full flex items-center justify-center space-x-3 px-6 py-3.5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl font-black text-sm transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-slate-900/10">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            <span>Source Code</span>
+                        </a>
+                        <a href="https://tharuk.pro/donate" target="_blank" class="w-full flex items-center justify-center space-x-3 px-6 py-3.5 bg-brand text-slate-900 rounded-2xl font-black text-sm transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-brand/20 hover:bg-amber-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            <span>Support the Project</span>
+                        </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+              <button type="button" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-900 dark:text-slate-300 shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 sm:mt-0 sm:w-auto transition-all" onclick="toggleSystemInfo()">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
+    <script>
+      // Browser Push Notification Logic
+      document.addEventListener('DOMContentLoaded', () => {
+          if ('Notification' in window) {
+              if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                  Notification.requestPermission();
+              }
+          }
+          
+          let lastNotificationId = null;
+
+          // Poll every 30 seconds
+          setInterval(async () => {
+              try {
+                  console.log('Notification Poll: Checking...');
+                  const res = await fetch("{{ url_for('api.check_new_notifications') }}");
+                  const data = await res.json();
+                  
+                  if (data.has_new) {
+                      console.log('--- NEW NOTIFICATION DETECTED ---');
+                      
+                      // 1. Show red dot on notification icon
+                      const badge = document.getElementById('notification-badge');
+                      if (badge) badge.classList.remove('hidden');
+                      
+                      // 2. Browser Notification
+                      if (Notification.permission === 'granted') {
+                          const msgId = data.id || data.title + data.body;
+                          if (msgId !== lastNotificationId) {
+                              lastNotificationId = msgId;
+                              new Notification(data.title, {
+                                  body: data.body,
+                                  icon: "{{ settings.favicon_url or '/static/icon.png' }}"
+                              });
+                          }
+                      }
+                      
+                      // 3. Auto-update: If currently on Notifications or Messages page, reload to show new content
+                      const path = window.location.pathname;
+                      if (path.includes('/notifications') || path.includes('/messages')) {
+                          console.log('Auto-refreshing current view...');
+                          window.location.reload();
+                      }
+                  }
+              } catch (e) { console.error('Poll failed', e); }
+          }, 30000);
+      });
+      
+      const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+      const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+      const themeToggleBtn = document.getElementById('theme-toggle');
+      
+      const mobileSidebar = document.getElementById('mobile-sidebar');
+      const mobileSidebarOpen = document.getElementById('mobile-sidebar-open');
+      const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
+      const mobileSidebarBackdrop = document.getElementById('mobile-sidebar-backdrop');
+      
+      function toggleSystemInfo() {
+          const modal = document.getElementById('system-info-modal');
+          modal.classList.toggle('hidden');
+      }
+
+      function toggleNotifications() {
+          const dropdown = document.getElementById('notification-dropdown');
+          dropdown.classList.toggle('hidden');
+          dropdown.classList.toggle('scale-95');
+          dropdown.classList.toggle('opacity-0');
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+          const container = document.getElementById('notification-container');
+          const dropdown = document.getElementById('notification-dropdown');
+          if (container && dropdown && !container.contains(event.target) && !dropdown.contains(event.target) && !dropdown.classList.contains('hidden')) {
+              dropdown.classList.add('hidden');
+              dropdown.classList.add('scale-95');
+              dropdown.classList.add('opacity-0');
+          }
+      });
+
+      function syncIcons() {
+          if (document.documentElement.classList.contains('dark')) {
+              themeToggleLightIcon.classList.remove('hidden');
+              themeToggleDarkIcon.classList.add('hidden');
+          } else {
+              themeToggleDarkIcon.classList.remove('hidden');
+              themeToggleLightIcon.classList.add('hidden');
+          }
+      }
+
+      function toggleMobileSidebar(show) {
+          if (show) {
+              mobileSidebarBackdrop.classList.remove('hidden');
+              setTimeout(() => {
+                  mobileSidebarBackdrop.classList.add('opacity-100');
+                  mobileSidebar.classList.remove('-translate-x-full');
+              }, 10);
+          } else {
+              mobileSidebar.classList.add('-translate-x-full');
+              mobileSidebarBackdrop.classList.remove('opacity-100');
+              setTimeout(() => {
+                  mobileSidebarBackdrop.classList.add('hidden');
+              }, 300);
+          }
+      }
+
+      syncIcons();
+
+      themeToggleBtn.addEventListener('click', function() {
+          document.documentElement.classList.toggle('dark');
+          if (document.documentElement.classList.contains('dark')) {
+              localStorage.setItem('color-theme', 'dark');
+          } else {
+              localStorage.setItem('color-theme', 'light');
+          }
+          syncIcons();
+      });
+
+      mobileSidebarOpen.addEventListener('click', () => toggleMobileSidebar(true));
+      mobileSidebarClose.addEventListener('click', () => toggleMobileSidebar(false));
+      mobileSidebarBackdrop.addEventListener('click', () => toggleMobileSidebar(false));
+
+      // Auto-dismiss alerts
+      window.addEventListener('DOMContentLoaded', () => {
+          const alerts = document.querySelectorAll('.flash-message.animate-in');
+          alerts.forEach(alert => {
+              setTimeout(() => {
+                  alert.classList.add('opacity-0', 'scale-95');
+                  alert.classList.remove('fade-in', 'zoom-in');
+                  setTimeout(() => alert.remove(), 500);
+              }, 4000);
+          });
+      });
+    </script>
+      <script>
+        // Service Worker Registration for Push Notifications
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/static/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    
+                    // Subscribe if not already
+                    registration.pushManager.getSubscription().then(function(sub) {
+                        if (sub === null) {
+                            // Fetch public key
+                            fetch('/api/push/public-key')
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.publicKey) {
+                                        const applicationServerKey = urlB64ToUint8Array(data.publicKey);
+                                        registration.pushManager.subscribe({
+                                            userVisibleOnly: true,
+                                            applicationServerKey: applicationServerKey
+                                        }).then(function(newSub) {
+                                            // Send sub to server
+                                            fetch('/api/push/subscribe', {
+                                                method: 'POST',
+                                                headers: {'Content-Type': 'application/json'},
+                                                body: JSON.stringify(newSub)
+                                            });
+                                        });
+                                    }
+                                });
+                        }
+                    });
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+        
+        function urlB64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+          
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+          
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+    </script>
+    <!-- Global Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 z-[100] hidden">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="glass max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
+          <div class="flex items-center space-x-3 text-amber-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <h3 id="confirm-title" class="text-lg font-bold text-slate-800 dark:text-slate-100">Confirmation</h3>
+          </div>
+          <p id="confirm-message" class="text-slate-600 dark:text-slate-400 text-sm">Are you sure you want to proceed?</p>
+          <div class="flex space-x-3 text-sm">
+            <button id="confirm-cancel" class="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+            <button id="confirm-ok" class="flex-1 py-3 rounded-xl bg-brand text-white font-bold hover:bg-amber-500 shadow-lg shadow-amber-500/20 transition-all">Confirm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      // Global Confirm Function using Custom Modal
+      window.askConfirm = function(title, message, onConfirm) {
+          const modal = document.getElementById('confirm-modal');
+          const titleEl = document.getElementById('confirm-title');
+          const msgEl = document.getElementById('confirm-message');
+          const okBtn = document.getElementById('confirm-ok');
+          const cancelBtn = document.getElementById('confirm-cancel');
+          
+          titleEl.innerText = title;
+          msgEl.innerText = message;
+          modal.classList.remove('hidden');
+          
+          const close = () => modal.classList.add('hidden');
+          
+          okBtn.onclick = () => { close(); onConfirm(); };
+          cancelBtn.onclick = close;
+      };
+    </script>
+</body>
+</html>

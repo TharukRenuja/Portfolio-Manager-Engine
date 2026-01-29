@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Domain Tracking{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Domain Inventory</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm md:text-base">Monitor your portfolio's digital identity and renewal schedules.</p>
+        </div>
+        <button onclick="document.getElementById('add-domain-modal').classList.remove('hidden')" class="hidden md:inline-flex items-center justify-center px-5 py-2.5 bg-brand text-slate-900 rounded-xl font-black hover:bg-amber-400 transition-all shadow-lg shadow-brand/20 whitespace-nowrap">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add Domain
+        </button>
+    </div>
+
+    <!-- Desktop Table (md+) -->
+    <div class="hidden md:block glass overflow-hidden rounded-3xl border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+                    <tr class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                        <th class="px-8 py-5">Managed Domain</th>
+                        <th class="px-8 py-5">Registrar</th>
+                        <th class="px-8 py-5">Expiry Schedule</th>
+                        <th class="px-8 py-5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for id, domain in domains.items() %}
+                    <tr class="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all">
+                        <td class="px-8 py-5">
+                            <h4 class="font-black text-slate-800 dark:text-slate-100 group-hover:text-brand transition-colors">{{ domain.domain_name }}</h4>
+                        </td>
+                        <td class="px-8 py-5 text-sm font-bold text-slate-500">{{ domain.registrar }}</td>
+                        <td class="px-8 py-5">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-black text-slate-700 dark:text-slate-300">{{ domain.expiry_date }}</span>
+                                {% set expiry = domain.expiry_date %}
+                                {% if expiry %}
+                                    <script>
+                                        (function() {
+                                            const parts = "{{ expiry }}".split('-');
+                                            const expiryDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                                            const diff = expiryDate - new Date();
+                                            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                                            if (days > 0 && days <= 30) {
+                                                document.write('<span class="text-[10px] font-black uppercase text-rose-500 mt-1 animate-pulse">⚠️ Expiring Soon (' + days + 'd)</span>');
+                                            } else if (days <= 0) {
+                                                document.write('<span class="text-[10px] font-black uppercase text-rose-600 mt-1">🚨 Expired</span>');
+                                            } else {
+                                                document.write('<span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Renews Annually</span>');
+                                            }
+                                        })();
+                                    </script>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <form action="{{ url_for('tools.domain_delete') }}" method="POST" class="inline" onsubmit="return confirm('Remove domain from tracker?')">
+                                <input type="hidden" name="domain_id" value="{{ id }}">
+                                <button type="submit" class="p-2 text-slate-400 hover:text-rose-500 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mobile Card View (< md) -->
+    <div class="md:hidden space-y-4">
+        {% for id, domain in domains.items() %}
+        <div class="glass p-5 rounded-3xl border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+            <div class="flex justify-between items-start mb-4">
+                <div class="min-w-0">
+                    <h4 class="text-lg font-black text-slate-800 dark:text-slate-100 leading-tight truncate">{{ domain.domain_name }}</h4>
+                    <p class="text-[10px] font-black text-brand uppercase tracking-[0.2em] mt-1">{{ domain.registrar }}</p>
+                </div>
+                <form action="{{ url_for('tools.domain_delete') }}" method="POST" class="inline" onsubmit="return confirm('Remove domain from tracker?')">
+                    <input type="hidden" name="domain_id" value="{{ id }}">
+                    <button type="submit" class="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </form>
+            </div>
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Expires On</p>
+                        <p class="text-sm font-black text-slate-700 dark:text-slate-300">{{ domain.expiry_date }}</p>
+                        {% set expiry = domain.expiry_date %}
+                        {% if expiry %}
+                            <script>
+                                (function() {
+                                    const parts = "{{ expiry }}".split('-');
+                                    const expiryDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                                    const diff = expiryDate - new Date();
+                                    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                                    if (days > 0 && days <= 30) {
+                                        document.write('<p class="text-[10px] font-black uppercase text-rose-500 mt-1 animate-pulse">⚠️ Expiring Soon (' + days + 'd)</p>');
+                                    } else if (days <= 0) {
+                                        document.write('<p class="text-[10px] font-black uppercase text-rose-600 mt-1">🚨 Expired</p>');
+                                    }
+                                })();
+                            </script>
+                        {% endif %}
+                    </div>
+                    <span class="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-400 text-[9px] font-black rounded-lg uppercase tracking-widest">Renews Yearly</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Domain Modal (Simple version) -->
+<div id="add-domain-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass w-full max-w-lg rounded-[2.5rem] p-10 animate-in zoom-in duration-300">
+        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6 uppercase italic">Track New Domain</h2>
+        <form action="{{ url_for('tools.domain_add') }}" method="POST" class="space-y-6">
+            <div class="space-y-2">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Domain Name</label>
+                <input type="text" name="domain_name" required class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="example.pro">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Registrar</label>
+                    <input type="text" name="registrar" class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="GoDaddy, Namecheap">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Expiry Date</label>
+                    <input type="date" name="expiry_date" required class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none">
+                </div>
+            </div>
+            <div class="flex gap-4 pt-4">
+                <button type="button" onclick="document.getElementById('add-domain-modal').classList.add('hidden')" class="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-2xl font-bold">Cancel</button>
+                <button type="submit" class="flex-1 py-4 bg-brand text-slate-900 rounded-2xl font-black">Save Track</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% block fab %}
+<button onclick="document.getElementById('add-domain-modal').classList.remove('hidden')" class="fab md:hidden bg-brand text-slate-900 shadow-xl shadow-brand/20">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+</button>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}Career Profile Management{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Career Studio</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm md:text-base">Manage your professional milestones and academic credentials.</p>
+        </div>
+        <button onclick="document.getElementById('add-career-modal').classList.remove('hidden')" class="hidden md:inline-flex items-center justify-center px-5 py-2.5 bg-brand text-slate-900 rounded-xl font-black hover:bg-amber-400 transition-all shadow-lg shadow-brand/20 whitespace-nowrap">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add Milestone
+        </button>
+    </div>
+
+    <!-- 3-Column Career Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- 1. Experience Column (Widest or Main) -->
+        <div class="lg:col-span-1 space-y-6">
+            <div class="flex items-center space-x-2 px-2">
+                <div class="w-2 h-6 bg-brand rounded-full"></div>
+                <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 uppercase italic tracking-wider">Experience</h2>
+            </div>
+            <div class="space-y-4">
+                {% for id, item in career.items() if item.type == 'experience' %}
+                <div class="glass p-6 rounded-3xl border-slate-200/60 dark:border-slate-800/60 group hover:border-brand/30 transition-all">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center space-x-4">
+                            {% if item.img %}
+                            <img src="{{ item.img }}" class="w-10 h-10 rounded-xl object-cover border border-slate-100 dark:border-slate-800 shadow-sm" alt="Logo">
+                            {% else %}
+                            <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            </div>
+                            {% endif %}
+                            <div class="min-w-0">
+                                <h4 class="font-black text-slate-800 dark:text-slate-100 leading-tight truncate text-sm">{{ item.title }}</h4>
+                                <p class="text-[9px] font-bold text-brand uppercase tracking-widest mt-0.5 truncate">{{ item.organization }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <div class="hidden item-data">{{ item | tojson | safe }}</div>
+                            <button onclick='openEditModal(this, "{{ id }}")' class="p-1 text-slate-300 hover:text-brand transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <form action="{{ url_for('cms.career_delete') }}" method="POST" onsubmit="return confirm('Remove milestone?')">
+                                <input type="hidden" name="career_id" value="{{ id }}">
+                                <button type="submit" class="p-1 text-slate-300 hover:text-rose-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{{ item.description }}</p>
+                        <div class="flex items-center pt-3 border-t border-slate-100 dark:border-slate-800/30">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em]">{{ item.start_date }} — {{ item.end_date }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-[10px] text-slate-400 italic px-2">No experience added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 2. Education Column -->
+        <div class="lg:col-span-1 space-y-6">
+            <div class="flex items-center space-x-2 px-2">
+                <div class="w-2 h-6 bg-brand rounded-full"></div>
+                <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 uppercase italic tracking-wider">Education</h2>
+            </div>
+            <div class="space-y-4">
+                {% for id, item in career.items() if item.type == 'education' %}
+                <div class="glass p-6 rounded-3xl border-slate-200/60 dark:border-slate-800/60 group">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="text-sm font-black text-slate-800 dark:text-slate-100">{{ item.title }}</h4>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{{ item.organization }}</p>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <div class="hidden item-data">{{ item | tojson | safe }}</div>
+                            <button onclick='openEditModal(this, "{{ id }}")' class="p-1 text-slate-300 hover:text-brand transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <form action="{{ url_for('cms.career_delete') }}" method="POST" onsubmit="return confirm('Remove education milestone?')">
+                                <input type="hidden" name="career_id" value="{{ id }}">
+                                <button type="submit" class="p-1 text-slate-300 hover:text-rose-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{{ item.start_date }} — {{ item.end_date }}</p>
+                </div>
+                {% else %}
+                <p class="text-[10px] text-slate-400 italic px-2">No education recorded.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 3. Certifications Column -->
+        <div class="lg:col-span-1 space-y-6">
+            <div class="flex items-center space-x-2 px-2">
+                <div class="w-2 h-6 bg-brand rounded-full"></div>
+                <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 uppercase italic tracking-wider">Certificates</h2>
+            </div>
+            <div class="space-y-4">
+                {% for id, item in career.items() if item.type == 'certification' %}
+                <div class="glass p-6 rounded-3xl border-slate-200/60 dark:border-slate-800/60 group hover:border-brand/30 transition-all">
+                    <div class="flex justify-between mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-8.061 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946 8.061 3.42 3.42 0 010 4.438 3.42 3.42 0 00-1.946 8.061 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-8.061 3.42 3.42 0 010-4.438z"></path></svg>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <div class="hidden item-data">{{ item | tojson | safe }}</div>
+                            <button onclick='openEditModal(this, "{{ id }}")' class="p-1 text-slate-300 hover:text-brand transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <form action="{{ url_for('cms.career_delete') }}" method="POST" onsubmit="return confirm('Remove certificate?')">
+                                <input type="hidden" name="career_id" value="{{ id }}">
+                                <button type="submit" class="p-1 text-slate-300 hover:text-rose-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 leading-tight">{{ item.title }}</h4>
+                        <p class="text-[10px] font-bold text-slate-500/80 mt-1 uppercase tracking-widest">{{ item.organization }}</p>
+                    </div>
+                    
+                    {% if item.link %}
+                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/30">
+                        <a href="{{ item.link }}" target="_blank" class="text-[10px] font-black text-brand flex items-center hover:underline uppercase tracking-tighter">
+                            Verification Link <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-[10px] text-slate-400 italic px-2">No certificates added.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Add/Edit Career Modal -->
+<div id="add-career-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass w-full max-w-xl rounded-[2.5rem] p-8 md:p-10 animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
+        <h2 id="modal-title" class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6 uppercase italic">Add Career Milestone</h2>
+        <form id="career-form" action="{{ url_for('cms.career_add') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="career_id" id="form-career-id">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Type</label>
+                    <select name="type" id="form-type" class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none appearance-none text-sm">
+                        <option value="experience">Experience / Work</option>
+                        <option value="education">Education</option>
+                        <option value="certification">Certification</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Title / Role</label>
+                    <input type="text" name="title" id="form-title" required class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm" placeholder="e.g. Software Engineer">
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Organization / Institution</label>
+                <input type="text" name="organization" id="form-organization" required class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm" placeholder="e.g. Google or Harvard University">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Date</label>
+                    <input type="month" name="start_date" id="form-start-date" required class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm" placeholder="Jan 2022">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">End Date (or leave blank for 'Present')</label>
+                    <input type="month" name="end_date" id="form-end-date" class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm" placeholder="Present">
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Description (Mainly for Experience)</label>
+                <textarea name="description" id="form-description" rows="3" class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm resize-none" placeholder="Key responsibilities and achievements..."></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Credential Link (Certs only)</label>
+                    <input type="url" name="link" id="form-link" class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm" placeholder="https://...">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Logo URL</label>
+                    <input type="url" name="img" id="career-img-url" class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm" placeholder="https://...">
+                </div>
+            </div>
+
+            <!-- Image Upload Helper -->
+            <div class="bg-brand/5 dark:bg-slate-900/50 p-4 rounded-2xl border border-dashed border-brand/20 dark:border-slate-700">
+                <div class="flex items-center justify-between">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Quick Logo Upload</p>
+                    <label class="cursor-pointer text-[10px] font-black text-brand hover:underline uppercase">
+                        Upload to ImgBB
+                        <input type="file" class="hidden" onchange="uploadCareerLogo(this)">
+                    </label>
+                </div>
+                <div id="upload-status" class="hidden mt-2 text-[9px] font-bold text-center"></div>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <button type="button" onclick="closeCareerModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-2xl font-bold text-sm">Cancel</button>
+                <button type="submit" id="submit-btn" class="flex-1 py-3 bg-brand text-slate-900 rounded-2xl font-black text-sm shadow-lg shadow-brand/20">Add Milestone</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal(btn, id) {
+    const itemData = btn.parentElement.querySelector('.item-data').textContent;
+    const item = JSON.parse(itemData);
+    
+    document.getElementById('modal-title').textContent = "Edit Career Milestone";
+    document.getElementById('submit-btn').textContent = "Update Milestone";
+    document.getElementById('career-form').action = `/career/edit/${id}`;
+    
+    document.getElementById('form-career-id').value = id;
+    document.getElementById('form-type').value = item.type || 'experience';
+    document.getElementById('form-title').value = item.title || '';
+    document.getElementById('form-organization').value = item.organization || '';
+    document.getElementById('form-start-date').value = item.start_date || '';
+    document.getElementById('form-end-date').value = item.end_date || '';
+    document.getElementById('form-description').value = item.description || '';
+    document.getElementById('form-link').value = item.link || '';
+    document.getElementById('career-img-url').value = item.img || '';
+    
+    document.getElementById('add-career-modal').classList.remove('hidden');
+}
+
+function closeCareerModal() {
+    document.getElementById('add-career-modal').classList.add('hidden');
+    // Reset form for next use (default to 'Add')
+    setTimeout(() => {
+        document.getElementById('modal-title').textContent = "Add Career Milestone";
+        document.getElementById('submit-btn').textContent = "Add Milestone";
+        document.getElementById('career-form').action = "{{ url_for('cms.career_add') }}";
+        document.getElementById('career-form').reset();
+        document.getElementById('form-career-id').value = '';
+    }, 300);
+}
+
+async function uploadCareerLogo(input) {
+    const status = document.getElementById('upload-status');
+    const urlInput = document.getElementById('career-img-url');
+    
+    if (!input.files || !input.files[0]) return;
+    
+    status.classList.remove('hidden');
+    status.textContent = "Uploading logo...";
+    status.className = "mt-2 text-[9px] font-bold text-brand animate-pulse";
+    
+    const formData = new FormData();
+    formData.append('image', input.files[0]);
+    
+    try {
+        const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (data.url) {
+            urlInput.value = data.url;
+            status.textContent = "✅ Logo uploaded successfully!";
+            status.className = "mt-2 text-[9px] font-bold text-emerald-500";
+        } else {
+            status.textContent = "❌ Upload failed: " + (data.error || "Unknown error");
+            status.className = "mt-2 text-[9px] font-bold text-rose-500";
+        }
+    } catch (e) {
+        status.textContent = "❌ Network error occurred.";
+        status.className = "mt-2 text-[9px] font-bold text-rose-500";
+    }
+}
+</script>
+
+{% block fab %}
+<button onclick="document.getElementById('add-career-modal').classList.remove('hidden')" class="fab md:hidden bg-brand text-slate-900 shadow-xl shadow-brand/20">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+</button>
+{% endblock %}
+
+{% endblock %}

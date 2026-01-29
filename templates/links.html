@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Bio-Link Directory{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Bio-Link Directory</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm md:text-base">Manage a unified list of your professional and social channels.</p>
+        </div>
+        <button onclick="document.getElementById('add-link-modal').classList.remove('hidden')" class="hidden md:inline-flex items-center justify-center px-5 py-2.5 bg-brand text-slate-900 rounded-xl font-black hover:bg-amber-400 transition-all shadow-lg shadow-brand/20 whitespace-nowrap">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add New Link
+        </button>
+    </div>
+
+    <!-- Link List -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        {% for id, link in links.items() %}
+        <div class="glass p-4 md:p-6 rounded-3xl border-slate-200/60 dark:border-slate-800/60 shadow-sm flex items-center justify-between group hover:border-brand/30 transition-all">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center justify-center text-brand">
+                    {% if link.icon == 'github' %}
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                    {% elif link.icon == 'linkedin' %}
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                    {% elif link.icon == 'dribbble' %}
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 24C5.385 24 0 18.615 0 12S5.385 0 12 0s12 5.385 12 12-5.385 12-12 12zm10.12-10.32c-.385-1.095-2.225-1.725-4.59-1.92 1.39 3.48 1.94 6.315 1.995 6.45 1.62-1.25 2.51-2.785 2.595-4.53zm-3.51 5.32c-.08-.255-.655-2.9-1.965-6.105-.09.02-.175.05-.265.075-3.48 1.055-4.83 4.59-4.995 5.04 1.155.635 2.475 1.005 3.885 1.005 1.25 0 2.42-.29 3.46-.755.035-.045.07-.105.105-.145.01-.01.02-.02.03-.035zM9.545 22.38c.175-.48 1.345-3.665 4.545-4.815.11-.04.225-.075.335-.11.08-.025.16-.045.24-.07-.075-.245-.16-.49-.245-.735a28.08 28.08 0 0 0-.255-.72c-3.13.915-6.52.885-7.7.855-.005.155-.015.31-.015.47 0 2.035.755 3.89 1.995 5.305.295-.03.585-.1.84-.18zm-4.705-6.495c.535.015 3.485.06 6.55-.785l.135-.04c-.45-1.135-.865-2.43-1.23-3.885l-.01-.005C6.1 12.185 3.935 14.18 3.51 14.73A8.88 8.88 0 0 0 4.84 15.885zM3.48 12.06c.035-.125.07-.255.105-.38l.19-.66c.215-.75.485-1.635 1.025-2.865l.04-.1C4.7 9.875 5.56 12 7.025 14.17l.005.01c.29.435.615.885.975 1.34-1.295.42-2.52.615-3.32.705 3.235-1.29 4.385-2.31 4.385-2.31l-.22-.055zm3.03-6.535C7.94 4.07 10 3.33 12.165 3.33c1.615 0 3.125.415 4.43 1.14-.15.225-.795 1.145-2 2.76-.02.025-.035.055-.055.08-1.555.225-3.325.215-5.18.005l-.1-.015a13.34 13.34 0 0 0-2.8 1.23zm13.11 1.745c-.46-.71-1.015-1.34-1.635-1.89l-.025-.02c.865 1.155 1.295 1.9 1.48 2.27.175.355.335.735.48 1.13.01-.005.02-.01.03-.015 2.155-.77 2.025-3.305 2.025-3.305l-.03.015c-1.125.755-2.14 1.555-2.335 1.835z"/></svg>
+                    {% elif link.icon == 'leetcode' %}
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M13.483 0a1.374 1.374 0 0 0-.961.414l-9.01 9.01a1.081 1.081 0 0 0 0 1.525l6.39 6.39a1.081 1.081 0 0 0 1.525 0l9.01-9.01A1.374 1.374 0 0 0 24 7.405v-5.28C24 .953 23.047 0 21.87 0h-8.387zM6.71 12.403L1.714 17.4a1.374 1.374 0 0 0-.414.961v5.226C1.3 23.047 2.253 24 3.43 24h5.226a1.374 1.374 0 0 0 .961-.414l4.996-4.996-7.893-7.893z"/></svg>
+                    {% elif link.icon == 'stackoverflow' %}
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M18.986 21.865v-6.404h2.134V24H1.844v-8.539h2.13v6.404h15.012zM6.111 19.731H16.85v-2.137H6.111v2.137zm.259-4.852l10.48 2.189.451-2.07-10.478-2.187-.453 2.068zm1.359-5.056l9.705 4.53.903-1.95-9.706-4.53-.902 1.95zm2.95-4.453l7.988 7.051 1.413-1.6-7.989-7.05-1.412 1.599zm4.276-3.832l5.77 9.001 1.785-1.15-5.77-8.995-1.785 1.144z"/></svg>
+                    {% elif link.icon == 'medium' %}
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M13.54 12a6.8 6.8 0 1 1-6.77-6.82A6.77 6.77 0 0 1 13.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42S14.2 15.54 14.2 12s1.51-6.42 3.38-6.42 3.38 2.88 3.38 6.42zm3.04 0c0 3.17-.31 5.75-.7 5.75s-.7-2.58-.7-5.75.31-5.75.7-5.75.7 2.58.7 5.75z"/></svg>
+                    {% else %}
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                    {% endif %}
+                </div>
+                <div class="min-w-0">
+                    <h3 class="font-bold text-slate-800 dark:text-slate-100 truncate">{{ link.label }}</h3>
+                    <p class="text-[10px] text-slate-400 truncate">{{ link.url }}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <form action="{{ url_for('tools.link_delete') }}" method="POST" class="inline">
+                    <input type="hidden" name="link_id" value="{{ id }}">
+                    <button type="submit" class="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full py-24 text-center glass rounded-3xl border-dashed border-2 border-slate-200 dark:border-slate-800">
+            <p class="text-slate-400 italic">No directory links added yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Link Modal -->
+<div id="add-link-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass w-full max-w-lg rounded-[2.5rem] p-10 animate-in zoom-in duration-300">
+        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6 uppercase italic">Add Directory Link</h2>
+        <form action="{{ url_for('tools.link_add') }}" method="POST" class="space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Label</label>
+                    <input type="text" name="label" required class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="GitHub, Store...">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Icon Key</label>
+                    <select name="icon" class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none appearance-none">
+                        <option value="link">Generic Link</option>
+                        <option value="github">GitHub</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="twitter">Twitter / X</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="dribbble">Dribbble (Designer)</option>
+                        <option value="behance">Behance (Designer)</option>
+                        <option value="leetcode">LeetCode (Dev/Student)</option>
+                        <option value="hackerrank">HackerRank (Dev/Student)</option>
+                        <option value="stackoverflow">StackOverflow (Dev)</option>
+                        <option value="devto">Dev.to (Dev/Writer)</option>
+                        <option value="medium">Medium (Writer/Student)</option>
+                        <option value="hashnode">Hashnode (Writer/Dev)</option>
+                        <option value="researchgate">ResearchGate (Student/Academic)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Destination URL</label>
+                <input type="url" name="url" required class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="https://...">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Order</label>
+                <input type="number" name="order" value="0" class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="0">
+            </div>
+            <div class="flex gap-4 pt-4">
+                <button type="button" onclick="document.getElementById('add-link-modal').classList.add('hidden')" class="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-2xl font-bold">Cancel</button>
+                <button type="submit" class="flex-1 py-4 bg-brand text-slate-900 rounded-2xl font-black">Add Link</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% block fab %}
+<button onclick="document.getElementById('add-link-modal').classList.remove('hidden')" class="fab md:hidden bg-brand text-slate-900 shadow-xl shadow-brand/20">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+</button>
+{% endblock %}
+{% endblock %}

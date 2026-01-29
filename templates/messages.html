@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Inbound Messages{% endblock %}
+{% block breadcrumb_active %}Messages{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Inbound Messages</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Direct contact form submissions from your portfolio.</p>
+        </div>
+    </div>
+
+    <div class="glass rounded-3xl border-slate-200/60 dark:border-slate-800/60 overflow-hidden">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center">
+             <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Messages
+            </h2>
+            <span class="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-1 rounded-lg">{{ messages|length }} Total</span>
+        </div>
+        
+        <div class="divide-y divide-slate-100 dark:divide-slate-800/50">
+            {% for msg_id, msg in messages.items() %}
+            <div class="p-6 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors group relative">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-500 mr-3">
+                            {{ msg.name[0] | upper if msg.name else '?' }}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200">{{ msg.name }}</h3>
+                            <a href="mailto:{{ msg.email }}" class="text-xs text-slate-400 hover:text-brand transition-colors">{{ msg.email }}</a>
+                        </div>
+                    </div>
+                     <span class="text-xs font-mono text-slate-400">{{ msg.timestamp.strftime('%b %d, %H:%M') if msg.timestamp else 'Unknown' }}</span>
+                </div>
+                
+                <div class="ml-13 mt-4 md:mt-2">
+                    <p class="font-semibold text-sm text-slate-700 dark:text-slate-300 mb-1">{{ msg.subject }}</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{{ msg.message }}</p>
+                </div>
+
+                <div class="mt-4 flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <a href="mailto:{{ msg.email }}?subject=Re: {{ msg.subject }}" class="flex items-center px-4 py-1.5 bg-brand/10 text-brand rounded-lg text-xs font-bold hover:bg-brand/20 transition-all">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5"></path></svg>
+                        Reply
+                    </a>
+                    {% set del_url = url_for('api.dismiss_notification_api', msg_id=msg_id) %}
+                    <button onclick="deleteMessage(event, '{{ del_url }}')" class="flex items-center px-4 py-1.5 bg-rose-50 dark:bg-rose-900/10 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-all">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="p-12 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
+                    <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200">No messages yet</h3>
+                <p class="text-slate-500">When someone contacts you, their message will appear here.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function deleteMessage(event, url) {
+    event.preventDefault();
+    window.askConfirm('Delete Message', 'Are you sure you want to permanently delete this message?', async () => {
+        try {
+            const response = await fetch(url, { method: 'DELETE' });
+            if (response.ok) { 
+                // Seamlessly remove the element from the DOM
+                const btn = event.target.closest('button');
+                const card = btn.closest('.p-6');
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                card.style.transition = 'all 0.3s ease';
+                setTimeout(() => window.location.reload(), 300);
+            }
+            else { alert('Failed to delete message'); }
+        } catch (e) { 
+            console.error('Delete error:', e);
+            alert('Error communicating with server'); 
+        }
+    });
+}
+</script>
+{% endblock %}

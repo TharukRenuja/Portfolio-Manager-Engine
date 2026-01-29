@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb_active %}Overview{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">System Overview</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Welcome back. Everything's running smoothly.</p>
+        </div>
+        <div class="hidden md:flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {% if features.monitor or features.vault %}
+            <button onclick="runDashboardChecks(this)" class="px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold text-xs md:text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <span id="check-text">Run Health Checks</span>
+            </button>
+            {% endif %}
+            
+            {% if features.blog %}
+            <a href="{{ url_for('cms.blog_new') }}" class="px-6 py-3 bg-brand text-slate-900 rounded-2xl font-black hover:bg-amber-400 transition-all shadow-lg shadow-brand/20 flex items-center justify-center text-xs md:text-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                New Post
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Core Module Stats -->
+    <div class="flex flex-wrap gap-3 sm:gap-6">
+        {% if features.career %}
+        <a href="{{ url_for('cms.career_list') }}" class="glass flex-1 min-w-[160px] p-4 sm:p-6 rounded-[2rem] border-slate-200/60 dark:border-slate-800/60 group hover:border-brand/40 transition-all relative overflow-hidden">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-brand/5 rounded-full group-hover:scale-125 transition-transform"></div>
+            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest relative z-10">Career Assets</p>
+            <div class="flex items-end justify-between mt-2 relative z-10">
+                <h3 class="text-3xl font-black text-slate-800 dark:text-slate-100">{{ stats.career_count|int }}</h3>
+                <span class="text-[10px] font-black text-brand uppercase">Milestones</span>
+            </div>
+        </a>
+        {% endif %}
+
+        {% if features.vault %}
+        <a href="{{ url_for('tools.vault_list') }}" class="glass flex-1 min-w-[160px] p-4 sm:p-6 rounded-[2rem] border-slate-200/60 dark:border-slate-800/60 group hover:border-blue-400/40 transition-all relative overflow-hidden">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-400/5 rounded-full group-hover:scale-125 transition-transform"></div>
+            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest relative z-10">Vault Inventory</p>
+            <div class="flex items-end justify-between mt-2 relative z-10">
+                <h3 class="text-3xl font-black text-slate-800 dark:text-slate-100">{{ stats.vault_count }}</h3>
+                <span class="text-[10px] font-black text-blue-500 uppercase">Tracked</span>
+            </div>
+        </a>
+        {% endif %}
+
+        {% if features.blog %}
+        <a href="{{ url_for('cms.blog_list') }}" class="glass flex-1 min-w-[160px] p-4 sm:p-6 rounded-[2rem] border-slate-200/60 dark:border-slate-800/60 group hover:border-purple-400/40 transition-all relative overflow-hidden">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-400/5 rounded-full group-hover:scale-125 transition-transform"></div>
+            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest relative z-10">Published Work</p>
+            <div class="flex items-end justify-between mt-2 relative z-10">
+                <h3 class="text-3xl font-black text-slate-800 dark:text-slate-100">{{ stats.blogs_count }}</h3>
+                <span class="text-[10px] font-black text-purple-500 uppercase">Content</span>
+            </div>
+        </a>
+        {% endif %}
+
+        <a href="{{ url_for('tools.messages_list') }}" class="glass flex-1 min-w-[160px] p-4 sm:p-6 rounded-[2rem] border-slate-200/60 dark:border-slate-800/60 group hover:border-emerald-400/40 transition-all relative overflow-hidden">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-400/5 rounded-full group-hover:scale-125 transition-transform"></div>
+            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest relative z-10">Inbound Flow</p>
+            <div class="flex items-end justify-between mt-2 relative z-10">
+                <h3 class="text-3xl font-black text-slate-800 dark:text-slate-100">{{ stats.total_messages }}</h3>
+                <span class="text-[10px] font-black text-emerald-500 uppercase">Total</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Performance Insights -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass p-5 sm:p-8 rounded-[2.5rem] border-slate-200/60 dark:border-slate-800/60 transition-all hover:border-brand/20">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 uppercase italic tracking-widest">Traffic Insights</h3>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Real-time engagement tracking</p>
+                </div>
+                <span class="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full border border-emerald-500/20">LIVE TRAFFIC</span>
+            </div>
+            <div class="h-64">
+                <canvas id="trafficChart"></canvas>
+            </div>
+        </div>
+
+        <div class="glass p-5 sm:p-8 rounded-[2.5rem] border-slate-200/60 dark:border-slate-800/60 transition-all hover:border-brand/20">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 uppercase italic tracking-widest">Bandwidth Usage</h3>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Resource consumption metrics</p>
+                </div>
+                <span class="px-3 py-1 bg-brand/10 text-brand text-[10px] font-black rounded-full border border-brand/20">SYSTEM LOAD</span>
+            </div>
+            <div class="h-64">
+                <canvas id="bandwidthChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Stats & Popular Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Popular Content -->
+        <div class="lg:col-span-2 glass p-8 rounded-[2.5rem] border-slate-200/60 dark:border-slate-800/60">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-xl font-black text-slate-800 dark:text-slate-100 uppercase italic tracking-widest flex items-center">
+                    <svg class="w-5 h-5 mr-3 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    Top Performing
+                </h3>
+
+                <a href="{{ url_for('cms.blog_list') }}" class="text-[10px] font-black text-slate-400 hover:text-brand uppercase tracking-widest">View All</a>
+            </div>
+            <div class="space-y-4">
+                {% for item in stats.popular_content %}
+                <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50 group hover:border-brand/30 transition-all">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand font-black text-xs">
+                            {{ loop.index }}
+                        </div>
+                        <div>
+                            <h4 class="font-black text-slate-800 dark:text-slate-200 text-sm leading-tight">{{ item.title }}</h4>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ item.type }}</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-black text-brand">{{ item.views }}</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Views</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Reach Stats -->
+        <div class="space-y-6">
+            <!-- System Health Widget -->
+            <div class="glass p-8 rounded-[2rem] border-slate-200/60 dark:border-slate-800/60">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Health</h3>
+                    <div class="flex items-center space-x-2">
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full {% if stats.offline_count == 0 %}bg-emerald-400{% else %}bg-rose-400{% endif %} opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 {% if stats.offline_count == 0 %}bg-emerald-500{% else %}bg-rose-500{% endif %}"></span>
+                        </span>
+                        <span class="text-[9px] font-black {% if stats.offline_count == 0 %}text-emerald-500{% else %}text-rose-500{% endif %} uppercase">
+                            {% if stats.offline_count == 0 %}All Online{% else %}{{ stats.offline_count }} Down{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- Deployments -->
+                    <div>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 opacity-60">Vault Deployments</p>
+                        <div class="space-y-2.5">
+                            {% for d in stats.deployments_health[:3] %}
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate pr-4">{{ d.name }}</span>
+                                <span class="w-1.5 h-1.5 rounded-full {% if d.last_status == 'online' %}bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]{% else %}bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]{% endif %}"></span>
+                            </div>
+                            {% endfor %}
+                            {% if stats.deployments_health|length > 3 %}
+                            <a href="{{ url_for('tools.vault_list') }}" class="block text-[9px] font-bold text-brand uppercase text-center mt-3 hover:underline">+ {{ stats.deployments_health|length - 3 }} more in vault</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-8 rounded-[2rem] border-slate-200/60 dark:border-slate-800/60 bg-brand/5">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Web Reach</p>
+                <h2 class="text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tighter">{{ stats.total_views | format_number }}</h2>
+                <div class="mt-4 flex items-center text-[10px] font-bold text-emerald-500">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7 7 7M5 19l7-7 7 7"></path></svg>
+                    Lifetime Engagement
+                </div>
+            </div>
+
+            <div class="glass p-8 rounded-[2rem] border-slate-200/60 dark:border-slate-800/60">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Growth</span>
+                        <span class="text-[10px] font-black text-emerald-500">+{{ stats.monthly_views | format_number }}</span>
+                    </div>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-emerald-500 h-full w-[65%]" style="width: 65%"></div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between mt-6">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Yearly Volume</span>
+                        <span class="text-[10px] font-black text-blue-500">{{ stats.yearly_views | format_number }}</span>
+                    </div>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-blue-500 h-full w-[45%]" style="width: 45%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Data Storage -->
+    <div id="dashboard-chart-data" 
+         class="hidden" 
+         data-labels='{{ stats.chart_data.labels|tojson|safe }}'
+         data-views='{{ stats.chart_data.views|tojson|safe }}'
+         data-bandwidth='{{ stats.chart_data.bandwidth|tojson|safe }}'>
+    </div>
+</div>
+
+<!-- Health Check Results Modal -->
+<div id="health-results-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+    <div class="glass w-full max-w-xl rounded-[2.5rem] p-6 sm:p-10 animate-in zoom-in duration-300">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase italic">System Scan Report</h2>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Live Endpoint Analysis</p>
+            </div>
+            <button onclick="document.getElementById('health-results-modal').classList.add('hidden')" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div id="health-results-body" class="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+            <!-- Dynamic results here -->
+        </div>
+
+        <div class="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800/50 flex justify-end">
+            <button onclick="document.getElementById('health-results-modal').classList.add('hidden')" class="px-8 py-3 bg-brand text-slate-900 rounded-2xl font-black text-sm shadow-lg shadow-brand/20">Close Report</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function runDashboardChecks(btn) {
+        const text = document.getElementById('check-text');
+        const modal = document.getElementById('health-results-modal');
+        const resultsBody = document.getElementById('health-results-body');
+        const originalText = text ? text.textContent : '';
+        const icon = btn.querySelector('svg');
+    
+        btn.disabled = true;
+        if (icon) icon.classList.add('animate-spin');
+        if (text) text.textContent = "Scanning Systems...";
+        
+        try {
+            const response = await fetch("{{ url_for('tools.vault_run_checks') }}");
+            const data = await response.json();
+            
+            if (data.results) {
+                resultsBody.innerHTML = `
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 opacity-60">Portfolio Core Infrastructure</p>
+                    <div class="space-y-3" id="system-api-list"></div>
+                `;
+                
+                const list = document.getElementById('system-api-list');
+
+                data.results.forEach(res => {
+                    const statusColor = res.status === 'operational' ? 'emerald' : res.status === 'degraded' ? 'amber' : 'rose';
+                    
+                    list.innerHTML += `
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-black text-slate-800 dark:text-slate-200 text-sm leading-tight">${res.name}</h4>
+                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight">LATENCY: ${res.latency}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="px-3 py-1 bg-${statusColor}-500/10 text-${statusColor}-500 text-[10px] font-black rounded-lg uppercase tracking-wider">${res.status}</span>
+                                <div class="w-2 h-2 rounded-full bg-${statusColor}-500 shadow-[0_0_8px_rgba(0,0,0,0.2)]"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                modal.classList.remove('hidden');
+            }
+            
+            if (text) text.textContent = "Report Ready";
+            setTimeout(() => {
+                if (text) text.textContent = originalText;
+                btn.disabled = false;
+                if (icon) icon.classList.remove('animate-spin');
+            }, 3000);
+        } catch (e) {
+            if (text) text.textContent = "Scan Failed";
+            btn.disabled = false;
+            if (icon) icon.classList.remove('animate-spin');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const dataContainer = document.getElementById('dashboard-chart-data');
+        if (!dataContainer) return;
+
+        const chartLabels = JSON.parse(dataContainer.dataset.labels || '[]');
+        const viewData = JSON.parse(dataContainer.dataset.views || '[]');
+        const bandwidthData = JSON.parse(dataContainer.dataset.bandwidth || '[]');
+
+        const ctxTraffic = document.getElementById('trafficChart').getContext('2d');
+        const ctxBandwidth = document.getElementById('bandwidthChart').getContext('2d');
+        const brandColor = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#FFD700';
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.1)' }, border: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' } },
+                x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' } }
+            },
+            elements: { 
+                line: { tension: 0.4 }, 
+                point: { radius: 0, hoverRadius: 6, backgroundColor: brandColor, borderWidth: 2, borderColor: '#fff' } 
+            }
+        };
+
+        new Chart(ctxTraffic, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Views',
+                    data: viewData,
+                    borderColor: brandColor,
+                    borderWidth: 4,
+                    fill: true,
+                    backgroundColor: (ctx) => {
+                        const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 400);
+                        gradient.addColorStop(0, brandColor + '40');
+                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                        return gradient;
+                    }
+                }]
+            },
+            options: commonOptions
+        });
+
+        new Chart(ctxBandwidth, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'MB',
+                    data: bandwidthData,
+                    backgroundColor: brandColor + '80',
+                    borderRadius: 12,
+                    borderWidth: 0,
+                    barThickness: 12
+                }]
+            },
+            options: commonOptions
+        });
+    });
+</script>
+
+{% block fab %}
+<div class="fixed bottom-8 right-6 flex flex-col space-y-4 md:hidden z-50">
+    {% if features.monitor or features.vault %}
+    <button onclick="runDashboardChecks(this)" class="w-14 h-14 bg-slate-900 dark:bg-slate-800 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 border border-slate-700/50">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+    </button>
+    {% endif %}
+    
+    {% if features.blog %}
+    <a href="{{ url_for('cms.blog_new') }}" class="w-14 h-14 bg-brand text-slate-900 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 shadow-brand/20">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% endblock %}

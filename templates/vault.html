@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Resource Vault{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div class="space-y-2">
+            <h1 class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Resource Vault</h1>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">Secure inventory of deployments, servers, and active subscriptions.</p>
+                <div class="inline-flex items-center w-fit gap-1.5 px-3 py-1 bg-brand/10 rounded-full border border-brand/20 shrink-0">
+                    <span class="w-1.5 h-1.5 bg-brand rounded-full animate-pulse"></span>
+                    <span class="text-[9px] font-black text-brand uppercase tracking-widest whitespace-nowrap">Auto-Monitoring Active</span>
+                </div>
+            </div>
+        </div>
+        <div class="hidden md:flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <button onclick="runGlobalChecks(this)" class="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-xs md:text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Sync Status
+            </button>
+            <button onclick="document.getElementById('add-vault-modal').classList.remove('hidden')" class="inline-flex flex-1 sm:flex-none items-center justify-center px-6 py-3 bg-brand text-slate-900 rounded-xl font-black hover:bg-amber-400 transition-all shadow-lg shadow-brand/20 whitespace-nowrap text-xs md:text-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add Resource
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-3 gap-3 md:gap-6">
+        <div class="glass p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-slate-200/60 dark:border-slate-800/60 transition-all hover:border-brand/20">
+            <p class="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 truncate">Assets</p>
+            <h3 class="text-xl sm:text-3xl font-black text-slate-800 dark:text-slate-100">{{ vault|length }}</h3>
+        </div>
+        {% set deploys = vault.values()|selectattr('category', 'equalto', 'deployment')|list|length %}
+        <div class="glass p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-slate-200/60 dark:border-slate-800/60 transition-all hover:border-brand/20">
+            <p class="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 truncate">Deploys</p>
+            <h3 class="text-xl sm:text-3xl font-black text-brand">{{ deploys }}</h3>
+        </div>
+        {% set subs = vault.values()|selectattr('category', 'equalto', 'subscription')|list|length %}
+        <div class="glass p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-slate-200/60 dark:border-slate-800/60 transition-all hover:border-brand/20">
+            <p class="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 truncate">Subs</p>
+            <h3 class="text-xl sm:text-3xl font-black text-rose-500">{{ subs }}</h3>
+        </div>
+    </div>
+
+    <!-- Desktop Table View -->
+    <div class="hidden md:block glass overflow-hidden rounded-3xl border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+                    <tr class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                        <th class="px-8 py-5">Service / Asset Name</th>
+                        <th class="px-8 py-5">Status / Link</th>
+                        <th class="px-8 py-5">Info</th>
+                        <th class="px-8 py-5">Renewal / Cost</th>
+                        <th class="px-8 py-5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for id, item in vault.items() %}
+                    <tr class="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all">
+                        <td class="px-8 py-5">
+                            <div class="flex items-center space-x-3">
+                                <span class="w-2 h-2 rounded-full {% if item.category == 'deployment' %}bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]{% elif item.category == 'subscription' %}bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.5)]{% else %}bg-slate-400{% endif %}"></span>
+                                <h4 class="font-black text-slate-800 dark:text-slate-100 group-hover:text-brand transition-colors">{{ item.name }}</h4>
+                            </div>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 italic pl-5">{{ item.notes or 'No internal notes' }}</p>
+                        </td>
+                        <td class="px-8 py-5">
+                            {% if item.url %}
+                            <div class="flex flex-col space-y-2">
+                                <a href="{{ item.url }}" target="_blank" class="text-xs font-bold text-slate-500 hover:text-brand flex items-center gap-1 transition-colors">
+                                    {{ item.url | replace('https://', '') | replace('http://', '') | truncate(25) }}
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                {% if item.category == 'deployment' %}
+                                <div class="flex items-center gap-2">
+                                    <button onclick="pingService('{{ id }}', '{{ item.url }}', this)" class="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-brand hover:text-slate-900 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all">Manual Ping</button>
+                                    <span id="status-{{ id }}" class="text-[9px] font-black uppercase tracking-widest {% if item.last_status == 'online' %}text-emerald-500{% elif item.last_status == 'offline' %}text-rose-500{% else %}text-slate-400 hidden{% endif %}">
+                                        {{ item.last_status or 'Never checked' }}
+                                    </span>
+                                </div>
+                                {% if item.last_check %}
+                                <p class="text-[8px] font-bold text-slate-400 uppercase mt-0.5">Last auto-checked: {{ item.last_check.strftime('%b %d, %H:%M') if hasattr(item.last_check, 'strftime') else 'Recently' }}</p>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">Offline Asset</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-8 py-5">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">{{ item.provider }}</p>
+                            <span class="text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-widest
+                                {% if item.category == 'deployment' %} bg-blue-50 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400
+                                {% elif item.category == 'subscription' %} bg-rose-50 text-rose-500 dark:bg-rose-400/10 dark:text-rose-400
+                                {% else %} bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 {% endif %}">
+                                {{ item.category }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-5 text-sm">
+                            <p class="font-black text-slate-700 dark:text-slate-300 text-xs">{{ item.expiry_date }}</p>
+                            {% if item.cost and item.cost != '0' %}
+                            <span class="text-[9px] font-black text-brand uppercase tracking-widest">${{ item.cost }} recurring</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <form action="{{ url_for('tools.vault_delete') }}" method="POST" class="inline" onsubmit="return confirm('Remove asset from vault?')">
+                                <input type="hidden" name="item_id" value="{{ id }}">
+                                <button type="submit" class="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-8 py-20 text-center">
+                            <p class="text-slate-400 italic">Vault is empty.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden space-y-4">
+        {% for id, item in vault.items() %}
+        <div class="glass p-6 rounded-[2rem] border-slate-200/60 dark:border-slate-800/60 shadow-sm relative overflow-hidden transition-all active:scale-[0.98]">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <span class="w-2.5 h-2.5 rounded-full {% if item.category == 'deployment' %}bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]{% elif item.category == 'subscription' %}bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.5)]{% else %}bg-slate-400{% endif %}"></span>
+                    <h4 class="font-black text-slate-800 dark:text-slate-100 text-lg tracking-tight">{{ item.name }}</h4>
+                </div>
+                <form action="{{ url_for('tools.vault_delete') }}" method="POST" class="inline" onsubmit="return confirm('Remove asset from vault?')">
+                    <input type="hidden" name="item_id" value="{{ id }}">
+                    <button type="submit" class="p-2 bg-rose-500/10 text-rose-500 rounded-xl">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-5 pb-5 border-b border-slate-100 dark:border-slate-800/50">
+                <div>
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-60">Provider</p>
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ item.provider }}</p>
+                </div>
+                <div>
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-60">Renews On</p>
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ item.expiry_date }}</p>
+                </div>
+            </div>
+
+            {% if item.url %}
+            <div class="bg-slate-50/50 dark:bg-slate-800/30 p-4 rounded-2xl mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <a href="{{ item.url }}" target="_blank" class="text-xs font-black text-brand tracking-tight flex items-center gap-1.5 truncate pr-2">
+                        <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        {{ item.url | replace('https://', '') | replace('http://', '') | truncate(35) }}
+                    </a>
+                    {% if item.category == 'deployment' %}
+                    <span id="status-mobile-{{ id }}" class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest
+                        {% if item.last_status == 'online' %} bg-emerald-500/10 text-emerald-500 {% elif item.last_status == 'offline' %} bg-rose-500/10 text-rose-500 {% else %} bg-slate-100 text-slate-400 {% endif %}">
+                        {{ item.last_status or 'Scan Pend' }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% if item.category == 'deployment' %}
+                <div class="flex items-center justify-between mt-2">
+                    <button onclick="pingService('{{ id }}', '{{ item.url }}', this)" class="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Manual Ping</button>
+                    {% if item.last_check %}
+                    <p class="text-[8px] font-bold text-slate-400 uppercase">Synced: {{ item.last_check.strftime('%H:%M') if hasattr(item.last_check, 'strftime') else 'Just now' }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic mb-4">Internal Offline Asset</p>
+            {% endif %}
+
+            <div class="flex items-center justify-between mt-2">
+                <span class="text-[9px] font-black px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full uppercase tracking-widest">
+                    {{ item.category }}
+                </span>
+                {% if item.cost and item.cost != '0' %}
+                <span class="text-xs font-black text-slate-800 dark:text-slate-200">
+                    <span class="text-[9px] text-slate-400 uppercase font-black mr-1">Cost:</span>${{ item.cost }}
+                </span>
+                {% endif %}
+            </div>
+            {% if item.notes %}
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-3 border-t border-slate-100 dark:border-slate-800/50 pt-3 italic line-clamp-2">
+                {{ item.notes }}
+            </p>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="glass p-12 text-center rounded-[2.5rem]">
+            <p class="text-slate-400 italic">No assets found in vault.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Resource Modal -->
+<div id="add-vault-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass w-full max-w-lg rounded-[2.5rem] p-6 sm:p-10 animate-in zoom-in duration-300">
+        <h2 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 mb-6 uppercase italic">Vault New Asset</h2>
+        <form action="{{ url_for('tools.vault_add') }}" method="POST" class="space-y-6">
+            <div class="space-y-2">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Asset Name</label>
+                <input type="text" name="name" required class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="e.g. Portfolio Droplet">
+            </div>
+            
+            <div class="space-y-2">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Service Link (URL for monitoring)</label>
+                <input type="url" name="url" class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="https://app.tharuk.pro">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                    <select name="category" class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none appearance-none">
+                        <option value="deployment">Deployment</option>
+                        <option value="subscription">Subscription</option>
+                        <option value="other">Other Asset</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Provider</label>
+                    <input type="text" name="provider" class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="DigitalOcean, Cloudflare">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Expiry/Renewal Date</label>
+                    <input type="date" name="expiry_date" required class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cost (Optional)</label>
+                    <input type="number" step="0.01" name="cost" class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none" placeholder="0.00">
+                </div>
+            </div>
+            <div class="space-y-1">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Internal Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-6 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none resize-none" placeholder="SSH keys, login tips..."></textarea>
+            </div>
+            <div class="flex gap-4 pt-4">
+                <button type="button" onclick="document.getElementById('add-vault-modal').classList.add('hidden')" class="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-2xl font-bold">Cancel</button>
+                <button type="submit" class="flex-1 py-4 bg-brand text-slate-900 rounded-2xl font-black shadow-lg shadow-brand/20">Secure Asset</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+async function runGlobalChecks(btn) {
+    const icon = btn.querySelector('svg');
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    if (icon) icon.classList.add('animate-spin');
+    
+    // If it's the header button, we update text. For FAB, icon spin is enough.
+    if (btn.innerText.includes('Sync')) {
+         btn.innerHTML = `<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Pinging...`;
+    }
+
+    try {
+        await fetch("{{ url_for('tools.vault_run_checks') }}");
+        setTimeout(() => window.location.reload(), 1500);
+    } catch (e) {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+        if (icon) icon.classList.remove('animate-spin');
+    }
+}
+
+async function pingService(id, url, btn) {
+    const icon = btn ? btn.querySelector('svg') : null;
+    if (icon) icon.classList.add('animate-spin');
+    
+    const dStatus = document.getElementById(`status-${id}`);
+    const mStatus = document.getElementById(`status-mobile-${id}`);
+    const spans = [dStatus, mStatus].filter(s => s);
+
+    spans.forEach(s => {
+        s.classList.remove('hidden', 'text-emerald-500', 'text-rose-500', 'bg-emerald-500/10', 'bg-rose-500/10');
+        s.classList.add('text-slate-400', 'animate-pulse');
+        s.textContent = "Checking...";
+    });
+
+    try {
+        const response = await fetch("{{ url_for('tools.vault_ping') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        });
+        const data = await response.json();
+        
+        spans.forEach(s => {
+            s.classList.remove('animate-pulse', 'text-slate-400');
+            if (data.status === 'online') {
+                s.textContent = "Online";
+                s.classList.add('text-emerald-500');
+                if (s.id.includes('mobile')) s.classList.add('bg-emerald-500/10');
+            } else {
+                s.textContent = "Offline";
+                s.classList.add('text-rose-500');
+                if (s.id.includes('mobile')) s.classList.add('bg-rose-500/10');
+            }
+        });
+        if (icon) icon.classList.remove('animate-spin');
+    } catch (e) {
+        spans.forEach(s => {
+            s.textContent = "Error";
+            s.classList.add('text-rose-500');
+        });
+        if (icon) icon.classList.remove('animate-spin');
+    }
+}
+</script>
+
+{% block fab %}
+<div class="fixed bottom-8 right-6 flex flex-col space-y-4 md:hidden z-50">
+    <button onclick="runGlobalChecks(this)" class="w-14 h-14 bg-slate-900 dark:bg-slate-800 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 border border-slate-700/50">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+    </button>
+    <button onclick="document.getElementById('add-vault-modal').classList.remove('hidden')" class="w-14 h-14 bg-brand text-slate-900 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 shadow-brand/20">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+    </button>
+</div>
+{% endblock %}
+
+{% endblock %}

@@ -1,0 +1,15 @@
+cryptography
+flask
+python-dotenv
+firebase-admin
+flask-wtf
+python-slugify
+flask-bcrypt
+flask-cors
+pyotp
+qrcode
+requests
+flask-apscheduler
+pywebpush
+pillow
+flask-caching

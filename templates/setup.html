@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Setup Wizard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+       .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
+        @media (prefers-color-scheme: dark) {
+            .glass { background: rgba(15, 23, 42, 0.7); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 min-h-screen flex items-center justify-center p-4">
+    
+    <div class="max-w-3xl w-full space-y-8">
+        <!-- Header -->
+        <div class="text-center space-y-3">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-yellow-500/10 rounded-3xl mb-4">
+                <svg class="w-10 h-10 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <h1 class="text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tighter uppercase italic">Setup Wizard</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Build your professional ecosystem in a few steps</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="glass rounded-full p-2 shadow-xl border border-slate-200/60 dark:border-slate-800/60">
+            <div class="h-2 bg-yellow-500 rounded-full transition-all duration-500" id="progress-bar" style="width: 16.66%"></div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="glass p-8 md:p-12 rounded-[2.5rem] border-slate-200/60 dark:border-slate-800/60 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-500/10 blur-[80px] rounded-full"></div>
+            
+            <form action="{{ url_for('auth.setup') }}" method="POST" class="space-y-8 relative z-10" id="setup-form">
+                <!-- Step 0: Firebase Credentials -->
+                <div class="step active" data-step="0">
+                    <h2 class="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-[0.3em] mb-6">Step 0: Firebase Configuration</h2>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                            <p class="text-xs text-blue-700 dark:text-blue-300 font-bold leading-relaxed">
+                                📌 Paste your Firebase Service Account JSON below. Get it from Firebase Console → Project Settings → Service Accounts → Generate New Private Key
+                            </p>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Firebase Credentials (JSON)</label>
+                            <textarea name="firebase_credentials" rows="10" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 font-mono text-xs" placeholder='{ "type": "service_account", "project_id": "...", ... }'></textarea>
+                        </div>
+
+                        <!-- Restore Option -->
+                        <div class="mt-6 p-5 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-dashed border-emerald-300 dark:border-emerald-700 rounded-xl">
+                            <div class="flex items-start gap-3 mb-4">
+                                <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L9 8m4-4v12"></path></svg>
+                                <div class="flex-1">
+                                    <h3 class="text-xs font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-widest mb-1">Already Have a Backup?</h3>
+                                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium leading-relaxed">
+                                        If you've exported a backup from another portfolio instance, you can restore it here to skip the entire setup wizard.
+                                    </p>
+                                </div>
+                            </div>
+                            <label class="block w-full cursor-pointer">
+                                <div class="flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all">
+                                    <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                    <span class="text-xs font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-widest" id="restore-label">Choose Backup File (.json)</span>
+                                </div>
+                                <input type="file" id="restore-file" accept=".json" class="hidden" onchange="handleRestoreFile(this)">
+                            </label>
+                            <div id="restore-file-name" class="hidden mt-3 p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
+                                <p class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span id="file-name-text"></span>
+                                </p>
+                            </div>
+                            <input type="hidden" name="restore_backup" id="restore-backup-data">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Admin Account -->
+                <div class="step" data-step="1">
+                    <h2 class="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-[0.3em] mb-6">Step 1: Create Master Admin</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Admin Email</label>
+                            <input type="email" name="email" required class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="admin@example.com">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Password</label>
+                            <input type="password" name="password" required class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="••••••••">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Site Identity -->
+                <div class="step" data-step="2">
+                    <h2 class="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-[0.3em] mb-6">Step 2: Site Identity</h2>
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Portfolio Name</label>
+                            <input type="text" name="site_name" required class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="john.dev">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Contact Email</label>
+                            <input type="email" name="contact_email" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="contact@john.dev">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Bio / Tagline</label>
+                            <textarea name="site_bio" rows="3" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="Fullstack engineer creating mobile & web experiences"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Social Links -->
+                <div class="step" data-step="3">
+                    <h2 class="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-[0.3em] mb-6">Step 3: Social Connectivity</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">GitHub</label>
+                            <input type="url" name="github_url" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="https://github.com/username">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">LinkedIn</label>
+                            <input type="url" name="linkedin_url" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="https://linkedin.com/in/username">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Twitter</label>
+                            <input type="url" name="twitter_url" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="https://twitter.com/username">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Branding -->
+                <div class="step" data-step="4">
+                    <h2 class="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-[0.3em] mb-6">Step 4: Console Branding</h2>
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Brand Color</label>
+                                <div class="flex items-center gap-4">
+                                    <input type="color" name="primary_color" value="#FFD700" class="w-16 h-16 rounded-xl border-0 p-0 overflow-hidden cursor-pointer">
+                                    <p class="text-xs text-slate-400 dark:text-slate-500 italic flex-1">Main accent color for buttons and highlights</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Accent Color</label>
+                                <div class="flex items-center gap-4">
+                                    <input type="color" name="accent_color" value="#10B981" class="w-16 h-16 rounded-xl border-0 p-0 overflow-hidden cursor-pointer">
+                                    <p class="text-xs text-slate-400 dark:text-slate-500 italic flex-1">Secondary color for success states</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: SEO Defaults -->
+                <div class="step" data-step="5">
+                    <h2 class="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-[0.3em] mb-6">Step 5: SEO Defaults</h2>
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Meta Title</label>
+                            <input type="text" name="meta_title" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="John Dev | Engineer & Designer">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Meta Description</label>
+                            <textarea name="meta_description" rows="3" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="Personal portfolio showcasing mobile apps and web development projects..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6: Integrations & Modular Features -->
+                <div class="step" data-step="6">
+                    <h2 class="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-[0.3em] mb-6">Step 6: Integrations & Features</h2>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                            <p class="text-xs text-blue-700 dark:text-blue-300 font-bold leading-relaxed">
+                                📌 Get your ImgBB API key: Visit <a href="https://api.imgbb.com/" target="_blank" class="underline hover:text-blue-500">api.imgbb.com</a> → Login/Signup → Get API Key. This enables image uploads for blog posts and projects.
+                            </p>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">ImgBB API Key (For Image Uploads)</label>
+                            <input type="text" name="imgbb_api_key" class="w-full px-5 py-4 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-yellow-500/20 outline-none transition-all dark:text-slate-100 text-sm" placeholder="Paste your API key here">
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Enable Modular Features</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="flex items-center space-x-3 p-4 glass rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-yellow-500/5 transition-colors">
+                                    <input type="checkbox" name="feature_blog" checked class="w-5 h-5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-500">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Blog Posts</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-4 glass rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-yellow-500/5 transition-colors">
+                                    <input type="checkbox" name="feature_projects" checked class="w-5 h-5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-500">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Projects</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-4 glass rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-yellow-500/5 transition-colors">
+                                    <input type="checkbox" name="feature_career" checked class="w-5 h-5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-500">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Career Timeline</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-4 glass rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-yellow-500/5 transition-colors">
+                                    <input type="checkbox" name="feature_links" checked class="w-5 h-5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-500">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Link Directory</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-4 glass rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-yellow-500/5 transition-colors">
+                                    <input type="checkbox" name="feature_vault" checked class="w-5 h-5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-500">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Security Vault</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-4 glass rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-yellow-500/5 transition-colors">
+                                    <input type="checkbox" name="feature_monitor" checked class="w-5 h-5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-500">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">System Monitor</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-4 glass rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-yellow-500/5 transition-colors">
+                                    <input type="checkbox" name="feature_resumes" checked class="w-5 h-5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-500">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Resume Vault</span>
+                                </label>
+                                <label class="flex items-center space-x-3 p-4 glass rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-yellow-500/5 transition-colors">
+                                    <input type="checkbox" name="feature_downloads" checked class="w-5 h-5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-500">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Downloads</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex items-center justify-between pt-6 border-t border-slate-200/60 dark:border-slate-800/60">
+                    <button type="button" id="prev-btn" onclick="prevStep()" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-sm" style="display: none;">
+                        Previous
+                    </button>
+                    <button type="button" id="next-btn" onclick="nextStep()" class="ml-auto px-8 py-4 bg-yellow-500 text-slate-900 rounded-xl font-black uppercase tracking-widest hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 text-sm flex items-center gap-2">
+                        Next Step
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                    <button type="button" id="restore-btn" onclick="document.getElementById('setup-form').submit()" class="ml-auto px-8 py-4 bg-emerald-500 text-white rounded-xl font-black uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 text-sm flex items-center gap-2" style="display: none;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L9 8m4-4v12"></path></svg>
+                        Restore Backup
+                    </button>
+                    <button type="submit" id="submit-btn" class="ml-auto px-8 py-4 bg-yellow-500 text-slate-900 rounded-xl font-black uppercase tracking-widest hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 text-sm flex items-center gap-2" style="display: none;">
+                        Complete Setup
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <p class="text-center text-[10px] text-slate-400 dark:text-slate-600 font-bold uppercase tracking-widest">
+            Powered by <span class="text-yellow-500">Portfolio Manager</span> Engine v1.0
+        </p>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        const totalSteps = 7;
+
+        function updateProgress() {
+            const progress = ((currentStep + 1) / totalSteps) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.step[data-step="${step}"]`).classList.add('active');
+
+            document.getElementById('prev-btn').style.display = step === 0 ? 'none' : 'block';
+            document.getElementById('next-btn').style.display = step === (totalSteps - 1) ? 'none' : 'flex';
+            document.getElementById('submit-btn').style.display = step === (totalSteps - 1) ? 'flex' : 'none';
+
+            updateProgress();
+        }
+
+        function nextStep() {
+            if (currentStep < (totalSteps - 1)) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+
+        function handleRestoreFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    // Store the backup data in hidden field
+                    document.getElementById('restore-backup-data').value = JSON.stringify(backupData);
+                    
+                    // Show file name
+                    document.getElementById('file-name-text').textContent = file.name;
+                    document.getElementById('restore-file-name').classList.remove('hidden');
+                    document.getElementById('restore-label').textContent = 'Backup Ready to Restore';
+                    
+                    // Replace Next/Submit buttons with Restore button
+                    document.getElementById('next-btn').style.display = 'none';
+                    document.getElementById('submit-btn').style.display = 'none';
+                    document.getElementById('restore-btn').style.display = 'flex';
+                    
+                    // Show success message
+                    alert('✅ Backup file loaded successfully! Make sure your Firebase credentials are filled above, then click "Restore Backup" to complete setup.');
+                } catch(err) {
+                    alert('Error reading backup file. Please ensure it\'s a valid JSON backup file.');
+                    input.value = '';
+                    document.getElementById('restore-backup-data').value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function updateIconPreview(url) {
+            const preview = document.getElementById('icon-preview');
+            const content = document.getElementById('dropzone-content');
+            if (url) {
+                preview.src = url;
+                preview.classList.remove('hidden');
+                content.classList.add('hidden');
+            } else {
+                preview.classList.add('hidden');
+                content.classList.remove('hidden');
+            }
+        }
+
+        async function uploadIcon(file) {
+            if (!file) return;
+            
+            const imgbbKey = document.querySelector('input[name="imgbb_api_key"]').value;
+            if (!imgbbKey) {
+                alert('Please enter your ImgBB API Key in Step 6 before uploading, or paste a URL below.');
+                return;
+            }
+
+            const loader = document.getElementById('upload-loader');
+            loader.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('api_key', imgbbKey);
+
+            try {
+                const response = await fetch("{{ url_for('api.upload_image') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.url) {
+                    document.getElementById('favicon_url').value = data.url;
+                    updateIconPreview(data.url);
+                } else {
+                    alert('Upload failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Connection error during upload.');
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        // Drag & Drop handlers
+        const dropzone = document.getElementById('icon-dropzone');
+        if (dropzone) {
+            dropzone.addEventListener('click', () => document.getElementById('icon-file').click());
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('border-yellow-500', 'bg-yellow-500/10');
+            });
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('border-yellow-500', 'bg-yellow-500/10');
+            });
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('border-yellow-500', 'bg-yellow-500/10');
+                if (e.dataTransfer.files.length) uploadIcon(e.dataTransfer.files[0]);
+            });
+        }
+
+        updateProgress();
+    </script>
+</body>
+</html>
