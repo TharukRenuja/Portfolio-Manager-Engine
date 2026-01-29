@@ -72,9 +72,15 @@ def bootstrap_check():
     try:
         if database.db:
             users = database.db.collection('users').limit(1).get()
-            if not users: return redirect(url_for('auth.setup'))
-        else: return redirect(url_for('auth.setup'))
-    except: return redirect(url_for('auth.setup'))
+            if not users: 
+                print("ℹ️  Redirecting to setup: No users found in DB")
+                return redirect(url_for('auth.setup'))
+        else: 
+            print("ℹ️  Redirecting to setup: Database not initialized")
+            return redirect(url_for('auth.setup'))
+    except Exception as e: 
+        print(f"⚠️  Bootstrap check error: {e}")
+        return redirect(url_for('auth.setup'))
 
 # --- Background Jobs (Maintained in main.py for state access) ---
 @scheduler.task('interval', id='update_analytics_aggregate', minutes=5, misfire_grace_time=300)

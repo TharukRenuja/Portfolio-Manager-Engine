@@ -10,28 +10,36 @@ def init_firebase():
     global db, firebase_initialized
     if not firebase_admin._apps:
         try:
+            # 1. Try Environment Variable (Best for Vercel/Heroku)
+            firebase_config = os.getenv('FIREBASE_CONFIG')
+            if firebase_config:
+                try:
+                    config = json.loads(firebase_config)
+                    cred = credentials.Certificate(config)
+                    firebase_admin.initialize_app(cred)
+                    firebase_initialized = True
+                    db = firestore.client()
+                    print("✅ Firebase initialized from FIREBASE_CONFIG env var")
+                    return db
+                except Exception as e:
+                    print(f"⚠️  Env var init failed: {e}")
+
+            # 2. Try Local File
             cred_path = 'firebase-key.json'
             if os.path.exists(cred_path):
                 with open(cred_path, 'r') as f:
                     config = json.load(f)
                 
-                # Only try to initialize if it looks like a real service account
                 if config.get('client_email') and config.get('private_key'):
                     cred = credentials.Certificate(cred_path)
                     firebase_admin.initialize_app(cred)
                     firebase_initialized = True
                     db = firestore.client()
+                    print("✅ Firebase initialized from local key file")
                 else:
                     print("ℹ️  Waiting for valid Firebase credentials (Run /setup)")
             else:
-                # Create placeholder for first-time setup
-                placeholder = {
-                    "type": "service_account",
-                    "project_id": "placeholder"
-                }
-                with open(cred_path, 'w') as f:
-                    json.dump(placeholder, f, indent=2)
-                print("⚠️  Firebase credentials file created. Please configure via /setup")
+                print("⚠️  No Firebase credentials found. Please configure via /setup")
         except Exception as e:
             print(f"⚠️  Firebase initialization skipped: {e}")
             

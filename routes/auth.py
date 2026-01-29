@@ -33,14 +33,21 @@ def setup():
                 import json as json_lib
                 firebase_data = json_lib.loads(firebase_json)
                 if 'project_id' in firebase_data and 'private_key' in firebase_data:
-                    with open('firebase-key.json', 'w') as f:
-                        json_lib.dump(firebase_data, f, indent=2)
+                    try:
+                        with open('firebase-key.json', 'w') as f:
+                            json_lib.dump(firebase_data, f, indent=2)
+                    except Exception as fe:
+                        print(f"⚠️  Could not write local key file (Serverless?): {fe}")
+                    
                     if firebase_admin._apps:
                         del firebase_admin._apps[firebase_admin._DEFAULT_APP_NAME]
-                    cred = credentials.Certificate('firebase-key.json')
+                    
+                    # Initialize from data directly instead of file path to support serverless better
+                    cred = credentials.Certificate(firebase_data)
                     firebase_admin.initialize_app(cred)
                     # Update global db reference
                     database.db = firestore.client()
+                    database.firebase_initialized = True
             except Exception as e:
                 flash(f'Firebase setup failed: {str(e)}', 'danger')
         
