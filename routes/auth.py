@@ -36,8 +36,8 @@ def setup():
                     try:
                         with open('firebase-key.json', 'w') as f:
                             json_lib.dump(firebase_data, f, indent=2)
-                    except Exception as fe:
-                        print(f"⚠️  Could not write local key file (Serverless?): {fe}")
+                    except:
+                        pass # Silent on serverless
                     
                     if firebase_admin._apps:
                         del firebase_admin._apps[firebase_admin._DEFAULT_APP_NAME]
@@ -103,7 +103,7 @@ def setup():
                 
                 # Create admin account from form
                 email = request.form.get('email', 'admin@example.com')
-                password = request.form.get('password', 'password')
+                password = request.form.get('password', 'password')[:72]
                 hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
                 
                 database.db.collection('users').add({
@@ -129,7 +129,7 @@ def setup():
 
         # Continue with manual setup if no backup
         email = request.form['email']
-        password = request.form['password']
+        password = request.form['password'][:72]
 
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         database.db.collection('users').add({
@@ -221,10 +221,13 @@ def setup():
             if imgbb_key:
                 env_content['IMGBB_API_KEY'] = imgbb_key
 
-            # Write back to .env
-            with open(env_path, 'w') as f:
-                for k, v in env_content.items():
-                    f.write(f"{k}={v}\n")
+            # Write back to .env (Try silently)
+            try:
+                with open(env_path, 'w') as f:
+                    for k, v in env_content.items():
+                        f.write(f"{k}={v}\n")
+            except:
+                pass
                     
             # Update current app config and environment
             from flask import current_app

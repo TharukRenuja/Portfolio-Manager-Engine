@@ -39,6 +39,16 @@ def init_firebase():
                 else:
                     print("ℹ️  Waiting for valid Firebase credentials (Run /setup)")
             else:
+                # Create placeholder for first-time setup (Try silently)
+                try:
+                    placeholder = {
+                        "type": "service_account",
+                        "project_id": "placeholder"
+                    }
+                    with open(cred_path, 'w') as f:
+                        json.dump(placeholder, f, indent=2)
+                except:
+                    pass
                 print("⚠️  No Firebase credentials found. Please configure via /setup")
         except Exception as e:
             print(f"⚠️  Firebase initialization skipped: {e}")

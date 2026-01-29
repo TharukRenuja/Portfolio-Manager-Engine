@@ -95,6 +95,7 @@ def settings_users_add():
         if existing:
             flash(f'User {email} already exists.', 'danger')
             return redirect(url_for('admin.settings_users'))
+        password = password[:72]
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         database.db.collection('users').add({'email': email, 'password': hashed_password, 'is_admin': True, 'created_at': datetime.now()})
         database.db.collection('admins').document(email).set({'email': email, 'added_at': datetime.now()})
@@ -126,6 +127,7 @@ def settings_users_password():
         flash('Invalid password entry.', 'danger')
         return redirect(url_for('admin.settings_users'))
     user_email = session['user']['email']
+    new_password = new_password[:72]
     hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
     user_refs = database.db.collection('users').where(filter=FieldFilter('email', '==', user_email)).limit(1).get()
     if user_refs:
