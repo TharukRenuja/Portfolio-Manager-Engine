@@ -1,11 +1,10 @@
 from flask import Flask, redirect, url_for, request
 import os
 from dotenv import load_dotenv
-from core.extensions import bcrypt, scheduler, cors
+from core.extensions import bcrypt, scheduler, cors, cache
 from core import database
 import requests
 from datetime import datetime
-from flask_caching import Cache
 
 # Import Blueprints
 from routes.auth import auth_bp
@@ -14,7 +13,7 @@ from routes.cms import cms_bp
 from routes.admin import admin_bp
 from routes.tools import tools_bp
 from routes.api import api_bp
-from core.shared import get_settings, send_push_notification, init_cache
+from core.shared import get_settings, send_push_notification
 from google.cloud.firestore import FieldFilter
 
 load_dotenv()
@@ -33,10 +32,7 @@ else:
     print("ℹ️  Local in-memory cache enabled (SimpleCache)")
 
 app.config['CACHE_DEFAULT_TIMEOUT'] = 300  # 5 minutes
-cache = Cache(app)
-
-# Initialize cache in shared module
-init_cache(cache)
+cache.init_app(app)
 
 # --- Serverless Configuration Recovery ---
 # On Vercel, we might have lost keys in .env. Try to recover from Firestore.

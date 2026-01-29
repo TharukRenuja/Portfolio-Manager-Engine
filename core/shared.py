@@ -4,13 +4,14 @@ from datetime import datetime
 import requests
 from core import database
 
-# Cache instance (will be initialized from main.py)
-cache = None
+from functools import wraps
+from flask import session, flash, redirect, url_for, request, jsonify
+from datetime import datetime
+import requests
+from core import database
+from core.extensions import cache
 
-def init_cache(cache_instance):
-    """Initialize cache from main app"""
-    global cache
-    cache = cache_instance
+# Global cache instance is now imported from extensions
 
 @cache.memoize(timeout=300)
 def _get_cached_settings():
