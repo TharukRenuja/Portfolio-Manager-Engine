@@ -24,6 +24,11 @@
                     <input type="text" name="permalink" value="{{ project.permalink or '' }}"
                         class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-gold/20 outline-none transition-all dark:text-slate-100" placeholder="my-awesome-project (Optional)">
                 </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">External Project Link</label>
+                    <input type="url" name="project_url" value="{{ project.project_url or '' }}"
+                        class="w-full px-5 py-3 bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-gold/20 outline-none transition-all dark:text-slate-100" placeholder="https://example.com (Optional)">
+                </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

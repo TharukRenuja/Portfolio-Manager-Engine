@@ -28,8 +28,12 @@ The Portfolio Manager provides a robust set of JSON endpoints for external front
 | `/api/settings` | `GET` | Website branding, social URLs, and features |
 | `/api/seo` | `GET` | SEO metadata and auto-generated JSON-LD |
 | `/api/blog` | `GET` | List all published blog posts |
+| `/api/blog/<permalink>` | `GET` | Fetch a single blog post by slug |
 | `/api/projects` | `GET` | List all projects and case studies |
-| `/api/experience` | `GET` | Career timeline and work history |
+| `/api/projects/<permalink>` | `GET` | Fetch a single project by slug |
+| `/api/experience` | `GET` | Career professional experience history |
+| `/api/education` | `GET` | Career education and academic history |
+| `/api/certificates` | `GET` | Career certifications and awards |
 | `/api/downloads` | `GET` | Software/App download links across platforms |
 | `/api/sitemap` | `GET` | Dynamic sitemap structure for search engines |
 
@@ -69,9 +73,14 @@ The Portfolio Manager provides a robust set of JSON endpoints for external front
 
 ## 🚀 Installation
 
-### 1. Prerequisites
-- A [Google Firebase](https://console.firebase.google.com/) Project with Firestore enabled
-- An [ImgBB](https://api.imgbb.com/) API Key (Free)
+### 1. Prerequisites & Firebase Setup
+To use this engine, you need a **Google Firebase** project. Follow these steps exactly:
+
+1.  **Create Project**: Visit the [Firebase Console](https://console.firebase.google.com/) and click **"Add Project"**.
+2.  **Enable Firestore**: In your new project, navigate to **Build → Firestore Database** and click **"Create Database"**. Choose your region and start in **Test Mode**.
+3.  **Generate Private Key**: Click the **Project Settings (Gear Icon)** → **Service Accounts** → **"Generate New Private Key"**. 
+4.  **Save Credentials**: Download the `.json` file. You will need to paste its contents during the setup wizard.
+5.  **Media Storage**: Get a free API Key from [ImgBB](https://api.imgbb.com/) for image uploads.
 
 ### 2. Setup
 ```bash
@@ -88,7 +97,7 @@ python main.py
 
 ### 3. Verification
 Visit `http://localhost:5000` to start the setup wizard.
-- Enter your **Firebase Config**.
+- Enter your **Firebase Service Account Config**.
 - Enter your **ImgBB API Key**.
 - Follow the wizard to initialize your brand.
 

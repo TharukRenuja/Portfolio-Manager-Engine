@@ -3,6 +3,43 @@ from flask import session, flash, redirect, url_for, request, jsonify
 from datetime import datetime
 import requests
 from core import database
+import os
+
+def sanitize_redis_url(url):
+    if not url:
+        return url
+    
+    url = url.strip()
+    
+    # Handle Upstash/Redis copy-paste CLI prefixes
+    tls_mode = False
+    if " --tls" in url:
+        tls_mode = True
+        
+    # Remove common CLI wrappers
+    prefixes = ["redis-cli -u ", "redis-cli --tls -u ", "redis-cli "]
+    for p in prefixes:
+        if url.startswith(p):
+            url = url[len(p):]
+            break
+            
+    # Remove leading '-u ' if it somehow remained
+    if url.startswith("-u "):
+        url = url[3:]
+
+    # Force rediss:// if TLS was indicated or it's a known secure provider (Upstash)
+    is_secure = tls_mode or "upstash.io" in url.lower()
+    
+    if is_secure and url.startswith("redis://"):
+        url = url.replace("redis://", "rediss://", 1)
+    elif is_secure and not url.startswith("rediss://") and "://" not in url:
+        # If it's just host:port, prepend rediss://
+        url = "rediss://" + url
+    elif not is_secure and not url.startswith("redis://") and "://" not in url:
+        # Default to redis:// if no protocol
+        url = "redis://" + url
+        
+    return url.strip()
 
 from functools import wraps
 from flask import session, flash, redirect, url_for, request, jsonify
@@ -80,6 +117,18 @@ def admin_required(f):
             return redirect(url_for('auth.login'))
         if not session['user'].get('is_admin'):
             flash('You do not have permission to access this page.', 'danger')
+            return redirect(url_for('dashboard.dashboard_home'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def root_admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            flash('You need to log in first.', 'warning')
+            return redirect(url_for('auth.login'))
+        if not session['user'].get('is_root'):
+            flash('Root Admin privileges required.', 'danger')
             return redirect(url_for('dashboard.dashboard_home'))
         return f(*args, **kwargs)
     return decorated_function

@@ -202,6 +202,7 @@ def setup():
 
             database.db.collection('settings').document('integrations').set({
                 'imgbb_api_key': request.form.get('imgbb_api_key', ''),
+                'redis_url': shared.sanitize_redis_url(request.form.get('redis_url', '')),
                 'updated_at': datetime.now()
             })
 
@@ -269,7 +270,7 @@ def setup():
                 env_content['IMGBB_API_KEY'] = imgbb_key
 
             # Add Redis URL to .env if provided in setup
-            redis_url = request.form.get('redis_url')
+            redis_url = shared.sanitize_redis_url(request.form.get('redis_url'))
             if redis_url:
                 env_content['REDIS_URL'] = redis_url
 
@@ -280,6 +281,7 @@ def setup():
             infra_keys['updated_at'] = datetime.now()
             
             database.db.collection('settings').document('infrastructure').set(infra_keys, merge=True)
+            database.db.collection('settings').document('integrations').set(infra_keys, merge=True)
             print(f"✅ [auth.py] Infrastructure persistence stored: {list(infra_keys.keys())}")
 
             # Write back to .env (Try silently)
@@ -330,11 +332,17 @@ def login():
                             'uid': user_ref[0].id, 
                             'email': email, 
                             'is_admin': is_admin,
+                            'is_root': admin_ref.to_dict().get('is_root', False) if admin_ref.exists else False,
                             'secret': user_data.get('mfa_secret')
                         }
                         return redirect(url_for('auth.login_mfa'))
                         
-                    session['user'] = {'uid': user_ref[0].id, 'email': email, 'is_admin': is_admin}
+                    session['user'] = {
+                        'uid': user_ref[0].id, 
+                        'email': email, 
+                        'is_admin': is_admin,
+                        'is_root': admin_ref.to_dict().get('is_root', False) if admin_ref.exists else False
+                    }
                     flash('Login successful!', 'success')
                     return redirect(url_for('dashboard.dashboard_home'))
             
@@ -354,7 +362,12 @@ def login_mfa():
         mfa_user = session['mfa_user']
         totp = pyotp.TOTP(mfa_user['secret'])
         if totp.verify(token):
-            session['user'] = {'uid': mfa_user['uid'], 'email': mfa_user['email'], 'is_admin': mfa_user['is_admin']}
+            session['user'] = {
+                'uid': mfa_user['uid'], 
+                'email': mfa_user['email'], 
+                'is_admin': mfa_user['is_admin'],
+                'is_root': mfa_user.get('is_root', False)
+            }
             session.pop('mfa_user', None)
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard.dashboard_home'))

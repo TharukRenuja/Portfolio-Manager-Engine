@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+import os
 from datetime import datetime
 from core import database
 from core.extensions import bcrypt
-from core.shared import login_required, admin_required, get_settings, get_seo
+from core.shared import login_required, admin_required, root_admin_required, get_settings, get_seo, sanitize_redis_url
 from google.cloud.firestore import FieldFilter
 
 admin_bp = Blueprint('admin', __name__)
@@ -53,6 +54,111 @@ def settings_website():
         flash('Website settings and module configuration saved.', 'success')
         return redirect(url_for('admin.settings_website'))
     return render_template('settings/website.html', settings=get_settings())
+
+@admin_bp.route('/settings/integrations', methods=['GET', 'POST'])
+@root_admin_required
+def settings_integrations():
+    if request.method == 'POST':
+        # Data for UI/Integrations (lowercase)
+        ui_data = {
+            'imgbb_api_key': request.form.get('imgbb_api_key'),
+            'redis_url': sanitize_redis_url(request.form.get('redis_url')),
+            'vapid_public_key': request.form.get('vapid_public_key'),
+            'vapid_private_key': request.form.get('vapid_private_key'),
+            'updated_at': datetime.now()
+        }
+        database.db.collection('settings').document('integrations').set(ui_data, merge=True)
+        
+        # Data for Environment/Infrastructure (UPPERCASE)
+        env_data = {k.upper(): v for k, v in ui_data.items() if v}
+        env_data['updated_at'] = datetime.now()
+        database.db.collection('settings').document('infrastructure').set(env_data, merge=True)
+        
+        # Update current environment
+        for k, v in env_data.items():
+            if v and k not in ['UPDATED_AT', 'updated_at']: 
+                os.environ[k] = str(v)
+            
+        flash('Integration settings updated.', 'success')
+        return redirect(url_for('admin.settings_integrations'))
+    
+    # Get current integrations with fallback to infrastructure
+    infra_doc = database.db.collection('settings').document('infrastructure').get()
+    integrations_doc = database.db.collection('settings').document('integrations').get()
+    
+    infra = infra_doc.to_dict() if infra_doc.exists else {}
+    integrations = integrations_doc.to_dict() if integrations_doc.exists else {}
+    
+    # Merge and Normalize: Prefer 'integrations' (manual), then 'infra' (auto), then 'os.environ' (local)
+    combined = {}
+    
+    # List of keys we track
+    tracked_keys = ['imgbb_api_key', 'redis_url', 'vapid_public_key', 'vapid_private_key']
+    
+    # 1. Start with os.environ (lowest priority fallback)
+    for key in tracked_keys:
+        val = os.getenv(key.upper())
+        if val: combined[key] = val
+            
+    # 2. Layer infra on top
+    for k, v in infra.items():
+        if v and k.lower() in tracked_keys:
+            combined[k.lower()] = v
+            
+    # 3. Layer integrations on top (highest priority)
+    for k, v in integrations.items():
+        if v and k.lower() in tracked_keys:
+            combined[k.lower()] = v
+            
+    print(f"🔍 [admin.py] Dashboard merge complete. Keys found: {list(combined.keys())}")
+    return render_template('settings/integrations.html', integrations=combined)
+
+@admin_bp.route('/settings/integrations/generate-vapid', methods=['POST'])
+@root_admin_required
+def generate_vapid_keys():
+    try:
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography.hazmat.primitives import serialization
+        import base64
+        
+        # Generate P-256 curve key
+        pk = ec.generate_private_key(ec.SECP256R1())
+        
+        # Private key bytes (d value)
+        private_value = pk.private_numbers().private_value
+        private_bytes = private_value.to_bytes(32, 'big')
+        private_b64 = base64.urlsafe_b64encode(private_bytes).decode('utf-8').rstrip('=')
+        
+        # Public key bytes (uncompressed 65 bytes: 0x04 + x + y)
+        public_bytes = pk.public_key().public_bytes(
+            encoding=serialization.Encoding.X962,
+            format=serialization.PublicFormat.UncompressedPoint
+        )
+        public_b64 = base64.urlsafe_b64encode(public_bytes).decode('utf-8').rstrip('=')
+        
+        data = {
+            'vapid_public_key': public_b64,
+            'vapid_private_key': private_b64,
+            'updated_at': datetime.now()
+        }
+        database.db.collection('settings').document('integrations').set(data, merge=True)
+        
+        # Save uppercase for environment recovery
+        env_data = {
+            'VAPID_PUBLIC_KEY': public_b64,
+            'VAPID_PRIVATE_KEY': private_b64,
+            'updated_at': datetime.now()
+        }
+        database.db.collection('settings').document('infrastructure').set(env_data, merge=True)
+        
+        os.environ['VAPID_PUBLIC_KEY'] = public_b64
+        os.environ['VAPID_PRIVATE_KEY'] = private_b64
+        
+        flash('VAPID keys auto-generated successfully.', 'success')
+    except Exception as e:
+        flash(f'Failed to generate VAPID keys: {str(e)}', 'danger')
+        
+    return redirect(url_for('admin.settings_integrations'))
 
 @admin_bp.route('/settings/seo', methods=['GET', 'POST'])
 @admin_required

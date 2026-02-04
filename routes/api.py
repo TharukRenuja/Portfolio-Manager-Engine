@@ -59,6 +59,47 @@ def get_sitemap():
         urls.append(make_url(f"/project/{p.get('permalink')}", 0.6, 'monthly', p.get('date')))
     return jsonify({'urls': urls})
 
+@api_bp.route('/api/blog/<permalink>', methods=['GET'])
+def get_blog_by_slug(permalink):
+    """Fetch a single blog post by its permalink."""
+    # Try to find by permalink
+    docs = database.db.collection('blog').where(filter=FieldFilter('permalink', '==', permalink)).limit(1).get()
+    
+    if docs:
+        doc = docs[0]
+        data = doc.to_dict()
+        # Add ID to data for convenience
+        data['id'] = doc.id
+        return jsonify(data)
+    
+    return jsonify({'error': 'Blog post not found'}), 404
+
+@api_bp.route('/api/projects/<permalink>', methods=['GET'])
+def get_project_by_slug(permalink):
+    """Fetch a single project by its permalink."""
+    docs = database.db.collection('projects').where(filter=FieldFilter('permalink', '==', permalink)).limit(1).get()
+    
+    if docs:
+        doc = docs[0]
+        data = doc.to_dict()
+        data['id'] = doc.id
+        return jsonify(data)
+    
+    return jsonify({'error': 'Project not found'}), 404
+
+@api_bp.route('/api/downloads/<download_id>', methods=['GET'])
+def get_download_by_id(download_id):
+    """Fetch a single download item by its ID."""
+    doc_ref = database.db.collection('downloads').document(download_id)
+    doc = doc_ref.get()
+    
+    if doc.exists:
+        data = doc.to_dict()
+        data['id'] = doc.id
+        return jsonify(data)
+    
+    return jsonify({'error': 'Download not found'}), 404
+
 @api_bp.route('/api/blog', methods=['GET'])
 @maintenance_guard
 def get_blog_api():
@@ -87,6 +128,18 @@ def get_downloads_api():
 @maintenance_guard
 def get_experience_api():
     items = database.db.collection('career').where(filter=FieldFilter('type', '==', 'experience')).get()
+    return jsonify({i.id: i.to_dict() for i in items})
+
+@api_bp.route('/api/education', methods=['GET'])
+@maintenance_guard
+def get_education_api():
+    items = database.db.collection('career').where(filter=FieldFilter('type', '==', 'education')).get()
+    return jsonify({i.id: i.to_dict() for i in items})
+
+@api_bp.route('/api/certificates', methods=['GET'])
+@maintenance_guard
+def get_certificates_api():
+    items = database.db.collection('career').where(filter=FieldFilter('type', '==', 'certification')).get()
     return jsonify({i.id: i.to_dict() for i in items})
 
 @api_bp.route('/api/health')
@@ -121,7 +174,12 @@ def update_blog_view(permalink):
     if blog_query:
         doc = blog_query[0]
         database.db.collection('blog').document(doc.id).update({'views': doc.to_dict().get('views', 0) + 1})
-        database.db.collection('analytics').add({'type': 'blog', 'id': doc.id, 'title': doc.to_dict().get('title'), 'timestamp': datetime.now()})
+        database.db.collection('analytics').add({
+            'item_type': 'blog', 
+            'item_id': doc.id, 
+            'title': doc.to_dict().get('title'), 
+            'timestamp': datetime.now()
+        })
         return jsonify({'status': 'tracked'})
     return jsonify({'error': 'Not found'}), 404
 
@@ -131,7 +189,12 @@ def update_project_view(permalink):
     if project_query:
         doc = project_query[0]
         database.db.collection('projects').document(doc.id).update({'views': doc.to_dict().get('views', 0) + 1})
-        database.db.collection('analytics').add({'type': 'project', 'id': doc.id, 'title': doc.to_dict().get('title'), 'timestamp': datetime.now()})
+        database.db.collection('analytics').add({
+            'item_type': 'project', 
+            'item_id': doc.id, 
+            'title': doc.to_dict().get('title'), 
+            'timestamp': datetime.now()
+        })
         return jsonify({'status': 'tracked'})
     return jsonify({'error': 'Not found'}), 404
 
@@ -141,7 +204,12 @@ def track_download_hit(download_id):
     doc = doc_ref.get()
     if doc.exists:
         doc_ref.update({'downloads_count': doc.to_dict().get('downloads_count', 0) + 1})
-        database.db.collection('analytics').add({'type': 'download', 'id': download_id, 'title': doc.to_dict().get('title'), 'timestamp': datetime.now()})
+        database.db.collection('analytics').add({
+            'item_type': 'download', 
+            'item_id': download_id, 
+            'title': doc.to_dict().get('title'), 
+            'timestamp': datetime.now()
+        })
         return jsonify({'status': 'tracked'})
     return jsonify({'error': 'Not found'}), 404
 
@@ -209,8 +277,6 @@ def log_analytics():
 @api_bp.route('/api/upload-image', methods=['POST'])
 @login_required
 def upload_image():
-    if 'image' not in request.files: return jsonify({'error': 'No image'}), 400
-
     if 'image' not in request.files: return jsonify({'error': 'No image'}), 400
     file = request.files['image']
     

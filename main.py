@@ -18,24 +18,9 @@ from google.cloud.firestore import FieldFilter
 
 load_dotenv()
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-123')
-
-# Configure Caching
-redis_url = os.getenv('REDIS_URL')
-if redis_url:
-    app.config['CACHE_TYPE'] = 'RedisCache'
-    app.config['CACHE_REDIS_URL'] = redis_url
-    print("🚀 Global cache enabled via Redis")
-else:
-    app.config['CACHE_TYPE'] = 'SimpleCache'
-    print("ℹ️  Local in-memory cache enabled (SimpleCache)")
-
-app.config['CACHE_DEFAULT_TIMEOUT'] = 300  # 5 minutes
-cache.init_app(app)
-
-# --- Serverless Configuration Recovery ---
-# On Vercel, we might have lost keys in .env. Try to recover from Firestore.
+# --- Advanced Configuration Recovery ---
+# Recover keys from Firestore before app initialization so they are available for Cache/Config
+from core.shared import sanitize_redis_url
 if database.db:
     try:
         infra_doc = database.db.collection('settings').document('infrastructure').get()
@@ -43,12 +28,55 @@ if database.db:
             infra = infra_doc.to_dict()
             for key, value in infra.items():
                 if key != 'updated_at' and not os.getenv(key):
-                    os.environ[key] = str(value)
-                    if key == 'SECRET_KEY':
-                        app.config['SECRET_KEY'] = value
+                    val = str(value)
+                    if key == 'REDIS_URL':
+                        val = sanitize_redis_url(val)
+                    os.environ[key] = val
             print("✅ Environment recovered from Firestore persistence layer")
     except Exception as ie:
         print(f"ℹ️  Infrastructure recovery skipped: {ie}")
+
+# Final sanitization for local .env keys
+if os.getenv('REDIS_URL'):
+    os.environ['REDIS_URL'] = sanitize_redis_url(os.getenv('REDIS_URL'))
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-123')
+
+# Configure Caching
+redis_url = os.getenv('REDIS_URL')
+if redis_url:
+    try:
+        app.config['CACHE_TYPE'] = 'RedisCache'
+        app.config['CACHE_REDIS_URL'] = redis_url
+        print(f"📡 Attempting Redis connection: {redis_url.split('@')[-1]}")
+        # Redis-specific options with SSL/TLS fixes
+        app.config['CACHE_OPTIONS'] = {
+            'socket_timeout': 10, 
+            'socket_connect_timeout': 10,
+            'retry_on_timeout': True,
+            'ssl_cert_reqs': None # Often needed for Upstash in dev environments
+        }
+        cache.init_app(app)
+        
+        # Test connection briefly
+        with app.app_context():
+            cache.set('ping', 'pong', timeout=1)
+            if cache.get('ping') == 'pong':
+                print("🚀 Global cache enabled via Redis (verified)")
+            else:
+                raise Exception("Redis connection inactive")
+    except Exception as e:
+        print(f"⚠️  Redis connection failed ({e}). Falling back to SimpleCache.")
+        app.config['CACHE_TYPE'] = 'SimpleCache'
+        app.config.pop('CACHE_REDIS_URL', None)
+        app.config['CACHE_OPTIONS'] = {} # CRITICAL: Clear Redis-specific options
+        cache.init_app(app)
+else:
+    app.config['CACHE_TYPE'] = 'SimpleCache'
+    app.config['CACHE_OPTIONS'] = {}
+    cache.init_app(app)
+    print("ℹ️  Local in-memory cache enabled (SimpleCache)")
 
 # Initialize Extensions
 bcrypt.init_app(app)

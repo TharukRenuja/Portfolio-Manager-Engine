@@ -66,12 +66,12 @@ def dashboard_home():
     download_hits = sum([d.to_dict().get('downloads_count', 0) for d in downloads_list])
     
     stats = {
-        'projects': database.db.collection('projects').count().get()[0][0].value if database.db else 0,
-        'blogs': database.db.collection('blog').count().get()[0][0].value if database.db else 0,
-        'messages': len([m for m in database.db.collection('messages').where(filter=FieldFilter('is_read', '==', False)).get() if not m.to_dict().get('is_system', False)]) if database.db else 0,
-        'analytics': total_analytics,
+        'projects': int(database.db.collection('projects').count().get()[0][0].value) if database.db else 0,
+        'blogs': int(database.db.collection('blog').count().get()[0][0].value) if database.db else 0,
+        'messages': int(len([m for m in database.db.collection('messages').where(filter=FieldFilter('is_read', '==', False)).get() if not m.to_dict().get('is_system', False)])) if database.db else 0,
+        'analytics': int(total_analytics),
         'downloads_count': len(downloads_list),
-        'download_hits': download_hits,
+        'download_hits': int(download_hits),
         'offline_count': offline_count,
         'deployments_health': deployments_health,
         'chart_data': {
@@ -79,18 +79,22 @@ def dashboard_home():
             'views': chart_views,
             'bandwidth': [round(v * 1.8 + download_hits * 0.05 + 2.1, 1) for v in chart_views]
         },# Additional fields for dashboard
-        'career_count': database.db.collection('career').count().get()[0][0].value if database.db else 0,
-        'vault_count': database.db.collection('vault').count().get()[0][0].value if database.db else 0,
-        'blogs_count': database.db.collection('blog').count().get()[0][0].value if database.db else 0,
-        'total_messages': database.db.collection('messages').where(filter=FieldFilter('is_system', '==', False)).count().get()[0][0].value if database.db else 0,
+        'career_count': int(database.db.collection('career').count().get()[0][0].value) if database.db else 0,
+        'vault_count': int(database.db.collection('vault').count().get()[0][0].value) if database.db else 0,
+        'blogs_count': int(database.db.collection('blog').count().get()[0][0].value) if database.db else 0,
+        'total_messages': int(database.db.collection('messages').where(filter=FieldFilter('is_system', '==', False)).count().get()[0][0].value) if database.db else 0,
         'popular_content': [],
-        'total_views': total_analytics,
-        'monthly_views': monthly_count,
-        'yearly_views': yearly_count
+        'total_views': int(total_analytics),
+        'monthly_views': int(monthly_count),
+        'yearly_views': int(yearly_count)
     }
     
-    # Get top performing content
+    # Calculate aggregated content count for "Published Work"
+    stats['total_published'] = stats['blogs'] + stats['projects']
+    
+    # Get top performing content (Mixed Blog + Projects)
     if database.db:
+        # Fetch top 5 blogs
         blogs = database.db.collection('blog').order_by('views', direction=firestore.Query.DESCENDING).limit(5).get()
         for blog in blogs:
             data = blog.to_dict()
@@ -99,6 +103,20 @@ def dashboard_home():
                 'type': 'Blog',
                 'views': data.get('views', 0)
             })
+            
+        # Fetch top 5 projects
+        projects = database.db.collection('projects').order_by('views', direction=firestore.Query.DESCENDING).limit(5).get()
+        for project in projects:
+            data = project.to_dict()
+            stats['popular_content'].append({
+                'title': data.get('title', 'Untitled'),
+                'type': 'Project',
+                'views': data.get('views', 0)
+            })
+            
+        # Sort combined list by views descending and take top 5
+        stats['popular_content'].sort(key=lambda x: x['views'], reverse=True)
+        stats['popular_content'] = stats['popular_content'][:5]
     
     return render_template('dashboard.html', stats=stats)
 
